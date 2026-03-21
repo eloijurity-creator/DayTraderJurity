@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falcon IA - Clone</title>
+    <style>
+        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .card { background: #1e2329; border-radius: 15px; padding: 25px; width: 350px; border: 1px solid #333; text-align: center; }
+        .status { color: #00ff88; font-weight: bold; margin-bottom: 20px; }
+        .signal-box { background: #2b3139; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #f0b90b; }
+        .buy { color: #00ff88; } .sell { color: #ff3b3b; }
+        button { background: #f0b90b; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:hover { background: #d9a508; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Jurity IA 🦅</h2>
+        <div class="status">● CONECTADO À B3</div>
+        
+        <div id="signal-area">
+            <div class="signal-box">
+                <p>Aguardando Próxima Oportunidade...</p>
+            </div>
+        </div>
+
+        <button onclick="gerarSinal()">ANALISAR MERCADO AGORA</button>
+    </div>
+
+    <script>
+        function gerarSinal() {
+            const ativos = ['WINJ24', 'WDOK24'];
+            const acoes = ['COMPRA FORTE', 'VENDA FORTE'];
+            const ativo = ativos[Math.floor(Math.random() * ativos.length)];
+            const acao = acoes[Math.floor(Math.random() * acoes.length)];
+            const cor = acao.includes('COMPRA') ? 'buy' : 'sell';
+
+            document.getElementById('signal-area').innerHTML = `
+                <div class="signal-box">
+                    <h3 class="${cor}">${acao}</h3>
+                    <p>Ativo: <strong>${ativo}</strong></p>
+                    <p>Entrada: ${Math.random().toFixed(3)}</p>
+                    <p>Stop: 150 pts | Alvo: 300 pts</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
