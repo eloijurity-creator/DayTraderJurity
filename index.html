@@ -29,22 +29,19 @@
     </div>
 
     <script>
-        function gerarSinal() {
-            const ativos = ['WINJ24', 'WDOK24'];
-            const acoes = ['COMPRA FORTE', 'VENDA FORTE'];
-            const ativo = ativos[Math.floor(Math.random() * ativos.length)];
-            const acao = acoes[Math.floor(Math.random() * acoes.length)];
-            const cor = acao.includes('COMPRA') ? 'buy' : 'sell';
-
-            document.getElementById('signal-area').innerHTML = `
-                <div class="signal-box">
-                    <h3 class="${cor}">${acao}</h3>
-                    <p>Ativo: <strong>${ativo}</strong></p>
-                    <p>Entrada: ${Math.random().toFixed(3)}</p>
-                    <p>Stop: 150 pts | Alvo: 300 pts</p>
-                </div>
-            `;
-        }
+          async function gerarSinal() {
+    const response = await fetch('/get_signal');
+    const data = await response.json();
+    
+    document.getElementById('signal-area').innerHTML = `
+        <div class="signal-box" style="border-left: 5px solid ${data.cor}">
+            <h3 style="color: ${data.cor}">${data.sinal}</h3>
+            <p>Ativo: <strong>${data.ativo}</strong></p>
+            <p>Preço: ${data.preco}</p>
+            <p>RSI: ${data.rsi}</p>
+        </div>
+    `;
+}
     </script>
 </body>
 </html>
