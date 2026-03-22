@@ -1,4 +1,4 @@
 flask
-pandas==2.2.2
+pandas
 gunicorn
-https://github.com/twopirllc/pandas-ta/archive/refs/heads/main.zip
+numpy
