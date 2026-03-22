@@ -1,4 +1,4 @@
 flask
 pandas==2.2.2
-pandas-ta==0.3.14b0
 gunicorn
+https://github.com/twopirllc/pandas-ta/archive/refs/heads/main.zip
