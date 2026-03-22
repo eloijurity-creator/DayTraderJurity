@@ -1,19 +1,16 @@
 from flask import Flask, render_template, jsonify
-import random
 import pandas as pd
-import pandas_ta as ta
+import numpy as np
+import random
 
 app = Flask(__name__)
 
-# Simulação de base de dados da B3 (Em um cenário real, você conectaria via API)
-def get_market_data():
-    data = {
-        'close': [random.uniform(120000, 121000) for _ in range(50)],
-        'high': [random.uniform(121000, 121500) for _ in range(50)],
-        'low': [random.uniform(119500, 120000) for _ in range(50)],
-        'open': [random.uniform(120000, 121000) for _ in range(50)]
-    }
-    return pd.DataFrame(data)
+def calcular_rsi(series, period=14):
+    delta = series.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
 
 @app.route('/')
 def index():
@@ -21,32 +18,29 @@ def index():
 
 @app.route('/get_signal')
 def get_signal():
-    df = get_market_data()
+    # Simulando dados de fechamento (Close)
+    precos = [random.uniform(120000, 121000) for _ in range(50)]
+    df = pd.DataFrame(precos, columns=['close'])
     
-    # Lógica da IA Falcon: RSI + Médias Móveis
-    df['RSI'] = ta.rsi(df['close'], length=14)
-    df['EMA_20'] = ta.ema(df['close'], length=20)
+    # Cálculos da IA Falcon (Manuais)
+    df['ma20'] = df['close'].rolling(window=20).mean()
+    df['rsi'] = calcular_rsi(df['close'])
     
-    last_rsi = df['RSI'].iloc[-1]
     last_close = df['close'].iloc[-1]
-    ema_20 = df['EMA_20'].iloc[-1]
+    last_rsi = df['rsi'].iloc[-1]
+    last_ma = df['ma20'].iloc[-1]
     
-    # Critério de sinal
-    if last_rsi < 35 and last_close > ema_20:
-        sinal = "COMPRA FORTE"
-        cor = "#00ff88"
-    elif last_rsi > 65 and last_close < ema_20:
-        sinal = "VENDA FORTE"
-        cor = "#ff3b3b"
+    # Lógica de Decisão
+    if last_rsi < 35 and last_close > last_ma:
+        sinal, cor = "COMPRA FORTE", "#00ff88"
+    elif last_rsi > 65 and last_close < last_ma:
+        sinal, cor = "VENDA FORTE", "#ff3b3b"
     else:
-        sinal = "AGUARDAR CONFIRMAÇÃO"
-        cor = "#f0b90b"
+        sinal, cor = "AGUARDAR", "#f0b90b"
 
     return jsonify({
-        "sinal": sinal,
-        "cor": cor,
-        "ativo": "WINJ26",
-        "rsi": round(last_rsi, 2),
+        "sinal": sinal, "cor": cor, "ativo": "WINJ26",
+        "rsi": round(last_rsi, 2) if not np.isnan(last_rsi) else 50,
         "preco": round(last_close, 2)
     })
 
