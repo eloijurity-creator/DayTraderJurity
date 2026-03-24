@@ -12,7 +12,7 @@ GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if not GEMINI_KEY:
     print("ERRO: A chave GEMINI_KEY não foi encontrada nas variáveis de ambiente!")
 genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 # --- VARIÁVEIS GLOBAIS ---
 # Armazena os últimos dados recebidos do MetaTrader 5
@@ -81,17 +81,23 @@ def chat():
     user_msg = request.json.get('mensagem')
     preco_atual = dados_reais.get("preco", "aguardando dados")
     
+    # Prompt otimizado
     prompt = f"Trader pergunta: {user_msg}. Preço atual: {preco_atual}. Responda como Falcon IA."
     
     try:
-        # Tentando gerar o conteúdo com o nome de modelo padrão
+        # Tentamos com o nome mais comum primeiro
         response = model.generate_content(prompt)
         return jsonify({"resposta": response.text})
     except Exception as e:
-        # Se falhar, vamos tentar listar os modelos para você ver no log do Render
-        modelos = [m.name for m in genai.list_models()]
-        return jsonify({"resposta": f"Erro: {str(e)}. Modelos disponíveis: {modelos[:3]}"})
-if __name__ == '__main__':
+        # Se falhar o 404, tentamos o modelo estável antigo como backup
+        try:
+            backup_model = genai.GenerativeModel('gemini-pro')
+            response = backup_model.generate_content(prompt)
+            return jsonify({"resposta": response.text})
+        except:
+            return jsonify({"resposta": f"Erro Técnico: {str(e)}. Verifique se a biblioteca google-generativeai está na versão 0.7.2 no requirements.txt"})
+    
+    if __name__ == '__main__':
     # O Render usa a porta 5000 por padrão ou a definida no ambiente
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
