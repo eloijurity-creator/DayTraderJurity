@@ -8,7 +8,7 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # --- CONFIGURAÇÃO DO GEMINI ---
-GEMINI_KEY = os.environ.get("GEMINI_KEY", "")
+GEMINI_KEY = os.environ.get("GEMINI_KEY", "AIzaSyCbaTFjM_ChhSdfm4SFkdeV69GT_uZwxQg")
 genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
