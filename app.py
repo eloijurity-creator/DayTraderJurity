@@ -92,8 +92,8 @@ def chat():
         response = model.generate_content(prompt)
         return jsonify({"resposta": response.text})
     except Exception as e:
-        return jsonify({"resposta": "Erro ao conectar com a IA. Verifique sua chave API."})
-
+       # return jsonify({"resposta": "Erro ao conectar com a IA. Verifique sua chave API."})
+        return jsonify({"resposta": f"Erro Real: {str(e)}"})
 if __name__ == '__main__':
     # O Render usa a porta 5000 por padrão ou a definida no ambiente
     port = int(os.environ.get("PORT", 5000))
