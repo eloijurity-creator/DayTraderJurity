@@ -12,7 +12,7 @@ GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if not GEMINI_KEY:
     print("ERRO: A chave GEMINI_KEY não foi encontrada nas variáveis de ambiente!")
 genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 
 # --- VARIÁVEIS GLOBAIS ---
 # Armazena os últimos dados recebidos do MetaTrader 5
