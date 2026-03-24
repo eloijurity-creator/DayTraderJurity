@@ -97,7 +97,7 @@ def chat():
         except:
             return jsonify({"resposta": f"Erro Técnico: {str(e)}. Verifique se a biblioteca google-generativeai está na versão 0.7.2 no requirements.txt"})
     
-    if __name__ == '__main__':
-    # O Render usa a porta 5000 por padrão ou a definida no ambiente
+   if __name__ == '__main__':
+    # Estas linhas ABAIXO precisam de 4 espaços (ou um TAB) no início:
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
