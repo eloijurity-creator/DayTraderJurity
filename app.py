@@ -81,19 +81,16 @@ def chat():
     user_msg = request.json.get('mensagem')
     preco_atual = dados_reais.get("preco", "aguardando dados")
     
-    prompt = f"""
-    Você é o Jurity IA, um assistente senior de Day Trade na B3.
-    Contexto Atual: O Mini Índice está em {preco_atual} pontos.
-    Instrução: Responda ao trader de forma técnica, curta e direta. 
-    Pergunta do Trader: {user_msg}
-    """
+    prompt = f"Trader pergunta: {user_msg}. Preço atual: {preco_atual}. Responda como Falcon IA."
     
     try:
+        # Tentando gerar o conteúdo com o nome de modelo padrão
         response = model.generate_content(prompt)
         return jsonify({"resposta": response.text})
     except Exception as e:
-       # return jsonify({"resposta": "Erro ao conectar com a IA. Verifique sua chave API."})
-        return jsonify({"resposta": f"Erro Real: {str(e)}"})
+        # Se falhar, vamos tentar listar os modelos para você ver no log do Render
+        modelos = [m.name for m in genai.list_models()]
+        return jsonify({"resposta": f"Erro: {str(e)}. Modelos disponíveis: {modelos[:3]}"})
 if __name__ == '__main__':
     # O Render usa a porta 5000 por padrão ou a definida no ambiente
     port = int(os.environ.get("PORT", 5000))
