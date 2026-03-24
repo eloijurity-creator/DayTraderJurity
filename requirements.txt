@@ -2,4 +2,4 @@ flask
 pandas
 gunicorn
 numpy
-openai
+google-generativeai
