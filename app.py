@@ -82,7 +82,7 @@ def chat():
     preco_atual = dados_reais.get("preco", "aguardando dados")
     
     # Prompt otimizado
-    prompt = f"Trader pergunta: {user_msg}. Preço atual: {preco_atual}. Responda como Falcon IA."
+    prompt = f"Trader pergunta: {user_msg}. Preço atual: {preco_atual}. Responda como Jurity IA."
     
     try:
         # Tentamos com o nome mais comum primeiro
