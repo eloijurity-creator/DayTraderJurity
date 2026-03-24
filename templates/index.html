@@ -52,7 +52,7 @@ async function enviarPergunta() {
         body: JSON.stringify({ mensagem: pergunta })
     });
     const data = await response.json();
-    chatWin.innerHTML += `<p style="color: #00ff88;"><b>Falcon:</b> ${data.resposta}</p>`;
+    chatWin.innerHTML += `<p style="color: #00ff88;"><b>Jurity:</b> ${data.resposta}</p>`;
     chatWin.scrollTop = chatWin.scrollHeight;
 }
 </script>
