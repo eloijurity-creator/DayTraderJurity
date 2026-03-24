@@ -8,7 +8,7 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # --- CONFIGURAÇÃO DO GEMINI ---
-GEMINI_KEY = os.environ.get("GEMINI_KEY", "AIzaSyCbaTFjM_ChhSdfm4SFkdeV69GT_uZwxQg")
+GEMINI_KEY = os.environ.get("GEMINI_KEY", "")
 genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
@@ -80,7 +80,7 @@ def chat():
     preco_atual = dados_reais.get("preco", "aguardando dados")
     
     prompt = f"""
-    Você é o Falcon IA, um assistente senior de Day Trade na B3.
+    Você é o Jurity IA, um assistente senior de Day Trade na B3.
     Contexto Atual: O Mini Índice está em {preco_atual} pontos.
     Instrução: Responda ao trader de forma técnica, curta e direta. 
     Pergunta do Trader: {user_msg}
