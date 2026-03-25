@@ -6,12 +6,12 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- IA CONFIG ---
+# --- CONFIGURAÇÃO GEMINI 2.5 FLASH ---
 GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
 
-# --- ARMAZENAMENTO ---
+# --- BANCO DE DADOS EM MEMÓRIA ---
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
 financeiro = {"resultado_dia": 0.0, "em_aberto": 0.0, "saldo_atual": 0.0, "conta": "Desconectado"}
@@ -32,8 +32,8 @@ def calcular_metricas(ativo):
     tend = "ALTA" if ma10 > ma30 else "BAIXA"
     
     forca = 0
-    if tend == "ALTA" and rsi < 40: forca = 70 + (40 - rsi)
-    if tend == "BAIXA" and rsi > 60: forca = 70 + (rsi - 60)
+    if tend == "ALTA" and rsi < 35: forca = 75 + (35 - rsi)
+    if tend == "BAIXA" and rsi > 65: forca = 75 + (rsi - 65)
     return {"tendencia": tend, "rsi": rsi, "forca": min(int(forca), 100)}
 
 @app.route('/')
@@ -59,8 +59,7 @@ def atualizar_fin():
         "saldo_atual": data.get('saldo_atual', 0),
         "conta": data.get('conta', "Desconectado")
     })
-    posicoes_abertas = data.get('posicoes', []) # AQUI VEM A TABELA
-    
+    posicoes_abertas = data.get('posicoes', [])
     agora = datetime.datetime.now().strftime("%H:%M:%S")
     if not historico_performance or historico_performance[-1]["acumulado"] != data['saldo_atual']:
         historico_performance.append({"horario": agora, "acumulado": data['saldo_atual']})
@@ -70,31 +69,27 @@ def atualizar_fin():
 @app.route('/get_signal')
 def get_signal():
     m_win, m_wdo = calcular_metricas("WIN"), calcular_metricas("WDO")
-    
     def gerar_decisao(m):
         if m['forca'] >= 75:
-            acao = "COMPRA" if m['tendencia'] == "ALTA" else "VENDA"
-            tipo_tecnico = "BUY" if m['tendencia'] == "ALTA" else "SELL"
-            return {"acao": tipo_tecnico, "msg": f"IA: {m['forca']}% CONF. EM {acao}", "conf": m['forca']}
+            acao_traduzida = "COMPRA" if m['tendencia'] == "ALTA" else "VENDA"
+            tipo_mt5 = "BUY" if m['tendencia'] == "ALTA" else "SELL"
+            return {"acao": tipo_mt5, "msg": f"IA: {m['forca']}% CONF. EM {acao_traduzida}", "conf": m['forca']}
         return None
-
     return jsonify({
         "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "decisao": gerar_decisao(m_win)},
         "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "decisao": gerar_decisao(m_wdo)},
-        "fin": financeiro, 
-        "posicoes": posicoes_abertas, 
-        "historico": historico_performance
+        "fin": financeiro, "posicoes": posicoes_abertas, "historico": historico_performance
     })
 
 @app.route('/chat', methods=['POST'])
 def chat():
     msg = request.json.get('mensagem')
-    prompt = f"Você é a Jurity IA 2.5 Flash. Trader perguntou: {msg}. Contexto: WIN={dados_reais['WIN']['preco']}, Saldo=R${financeiro['saldo_atual']}. Responda em português de forma técnica e curta."
+    prompt = f"Você é a Jurity IA 2.5. Responda em português técnico. WIN={dados_reais['WIN']['preco']}, Saldo=R${financeiro['saldo_atual']}. Pergunta: {msg}"
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         res = model.generate_content(prompt)
         return jsonify({"resposta": res.text})
-    except: return jsonify({"resposta": "IA Jurity temporariamente fora de área."})
+    except: return jsonify({"resposta": "Conexão com Jurity IA instável."})
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
