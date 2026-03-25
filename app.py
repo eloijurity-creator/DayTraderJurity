@@ -15,23 +15,22 @@ if GEMINI_KEY:
 # --- VARIÁVEIS GLOBAIS ---
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
-financeiro = {"lucro_hoje": 0.0, "em_aberto": 0.0, "qtd_ordens": 0}
+financeiro = {"lucro_hoje": 0.0, "em_aberto": 0.0, "qtd_ordens": 0, "conta": "Desconectado"}
 log_performance = []
 proximo_snapshot = datetime.datetime.now()
-fila_ordens = {"WIN": None, "WDO": None, "PANIC": False} # Fila de comandos
+fila_ordens = {"WIN": None, "WDO": None, "PANIC": False}
 
 def calcular_metricas(ativo):
     precos = historico_precos[ativo]
-    if len(precos) < 50: return {"tendencia": "AGUARDANDO", "rsi": 50, "volat": 0}
+    if len(precos) < 50: return {"tendencia": "AGUARDANDO", "rsi": 50}
     df = pd.DataFrame(precos, columns=['close'])
     ma20, ma50 = df['close'].tail(20).mean(), df['close'].tail(50).mean()
-    diff = (ma20 / ma50) - 1
-    tendencia = "ALTA" if diff > 0.0006 else "BAIXA" if diff < -0.0006 else "LATERAL"
+    tendencia = "ALTA" if ma20 > ma50 else "BAIXA"
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=20).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=20).mean()
     rsi = 100 - (100 / (1 + (gain / loss).iloc[-1]))
-    return {"tendencia": tendencia, "rsi": rsi, "volat": df['close'].tail(60).std()}
+    return {"tendencia": tendencia, "rsi": rsi}
 
 @app.route('/')
 def index(): return render_template('index.html')
@@ -50,10 +49,6 @@ def atualizar():
         agora = datetime.datetime.now()
         if agora >= proximo_snapshot:
             m = calcular_metricas(ativo)
-            for log in log_performance:
-                if log["ativo"] == ativo and log["resultado"] == "AGUARDANDO...":
-                    if log["tendencia"] == "ALTA": log["resultado"] = "✅ GAIN" if preco > log["preco"] else "❌ LOSS"
-                    elif log["tendencia"] == "BAIXA": log["resultado"] = "✅ GAIN" if preco < log["preco"] else "❌ LOSS"
             log_performance.insert(0, {"horario": agora.strftime("%H:%M"), "ativo": ativo, "preco": preco, "tendencia": m["tendencia"], "resultado": "AGUARDANDO..."})
             proximo_snapshot = agora + datetime.timedelta(minutes=15)
     return "OK"
@@ -70,7 +65,7 @@ def set_order():
     data = request.json
     if data.get('tipo') == 'PANIC': fila_ordens["PANIC"] = True
     else: fila_ordens[data['ativo']] = data
-    return jsonify({"status": "COMANDO RECEBIDO"})
+    return jsonify({"status": "ORDEM ENVIADA"})
 
 @app.route('/get_orders')
 def get_orders():
@@ -92,9 +87,12 @@ def get_signal():
 @app.route('/chat', methods=['POST'])
 def chat():
     user_msg = request.json.get('mensagem')
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    res = model.generate_content(f"Trader: {user_msg}. Analise técnica curta.")
-    return jsonify({"resposta": res.text})
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        res = model.generate_content(f"Trader: {user_msg}. Seja técnico e curto.")
+        return jsonify({"resposta": res.text})
+    except:
+        return jsonify({"resposta": "IA offline."})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
