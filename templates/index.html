@@ -2,166 +2,134 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA 2.5 Flash - Trader</title>
+    <title>Jurity IA 2.5 Flash</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: #0b0e11; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .status-bar { width: 900px; background: #1e2329; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid #333; margin-bottom: 15px; }
-        .container { display: flex; gap: 20px; width: 900px; }
-        .card { background: #1e2329; padding: 20px; border-radius: 12px; border: 1px solid #333; flex: 1; text-align: center; position: relative; }
-        .price { font-size: 38px; color: #f0b90b; font-weight: bold; margin: 10px 0; font-family: monospace; }
+        body { background: #0b0e11; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 15px; }
+        .status-bar { width: 950px; background: #1e2329; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid #333; margin-bottom: 10px; }
+        .container { display: flex; gap: 15px; width: 950px; }
+        .card { background: #1e2329; padding: 20px; border-radius: 12px; border: 1px solid #333; flex: 1; text-align: center; }
+        .price { font-size: 40px; color: #f0b90b; font-weight: bold; margin: 10px 0; font-family: monospace; }
         .btn-ia { display: none; background: #f0b90b; color: black; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 10px; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% {box-shadow: 0 0 0 0px rgba(240, 185, 11, 0.7);} 100% {box-shadow: 0 0 0 15px rgba(240, 185, 11, 0);} }
+        @keyframes pulse { 0% {box-shadow: 0 0 0 0 rgba(240,185,11,0.4)} 70% {box-shadow: 0 0 0 10px rgba(240,185,11,0)} 100% {box-shadow: 0 0 0 0 rgba(240,185,11,0)} }
         .gain { color: #02c076; } .loss { color: #cf304a; }
-        
-        /* Tabela de Ordens */
-        .orders-table { width: 900px; margin-top: 20px; background: #1e2329; border-radius: 8px; border: 1px solid #333; overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-        th, td { padding: 12px; border-bottom: 1px solid #333; }
-        th { background: #2b3139; color: #848e9c; }
-
-        .bottom-section { width: 900px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-top: 20px; }
-        .box { background: #1e2329; border: 1px solid #333; border-radius: 8px; padding: 15px; height: 280px; display: flex; flex-direction: column; }
-        #chat-box { flex-grow: 1; overflow-y: auto; font-size: 13px; margin-bottom: 10px; padding: 5px; }
-        input[type="text"] { width: 90%; background: #0b0e11; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 4px; align-self: center; }
-        input[type="number"] { background: #0b0e11; color: gold; border: 1px solid #444; padding: 5px; width: 50px; text-align: center; }
+        table { width: 950px; border-collapse: collapse; margin-top: 15px; background: #1e2329; font-size: 13px; }
+        th, td { padding: 12px; border-bottom: 1px solid #333; text-align: left; }
+        .bottom-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; width: 950px; margin-top: 15px; }
+        .box { background: #1e2329; border: 1px solid #333; border-radius: 8px; padding: 15px; height: 250px; }
+        #chat-box { height: 180px; overflow-y: auto; margin-bottom: 10px; font-size: 13px; }
     </style>
 </head>
 <body>
-    <h2 style="color:#f0b90b">🦅 JURITY IA 2.5 FLASH - <span style="color:white; font-size:14px">CONTA: <span id="f-conta">--</span></span></h2>
+    <h2 style="color:#f0b90b; margin: 0 0 15px 0;">🦅 JURITY IA 2.5 FLASH <small style="color:white; font-size:12px">CONTA: <span id="f-conta">--</span></small></h2>
     
     <div class="status-bar">
         <span>SALDO: <b id="f-saldo">R$ 0,00</b></span>
-        <span>LUCRO HOJE: <b id="f-dia">R$ 0,00</b></span>
-        <span>RESULTADO ABERTO: <b id="f-aberto">R$ 0,00</b></span>
+        <span>HOJE: <b id="f-dia">R$ 0,00</b></span>
+        <span>ABERTO: <b id="f-aberto">R$ 0,00</b></span>
     </div>
 
     <div class="container">
         <div class="card">
-            <h3>MINI ÍNDICE <span id="r-win" style="font-size:12px; opacity:0.5">RSI: --</span></h3>
+            <h3>WIN <span id="r-win" style="font-size:12px; opacity:0.5">RSI: --</span></h3>
             <button id="btn-ia-win" class="btn-ia" onclick="execIA('WIN')"></button>
             <div id="p-win" class="price">0</div>
-            <div style="margin-bottom:15px">Tendência: <b id="t-win">--</b></div>
-            <div style="margin-bottom:15px">LOTES: <input type="number" id="l-win" value="1" min="1"></div>
-            <div style="display:flex; gap:10px;">
-                <button style="flex:1; background:#02c076; border:none; padding:12px; color:white; font-weight:bold; border-radius:4px; cursor:pointer;" onclick="ordem('WIN','BUY')">COMPRAR</button>
-                <button style="flex:1; background:#cf304a; border:none; padding:12px; color:white; font-weight:bold; border-radius:4px; cursor:pointer;" onclick="ordem('WIN','SELL')">VENDER</button>
+            <div style="margin-bottom:10px">Tendência: <b id="t-win">--</b></div>
+            <div style="margin-bottom:10px">Lotes: <input type="number" id="l-win" value="1" style="width:40px; background:black; color:gold; border:1px solid #444"></div>
+            <div style="display:flex; gap:5px;">
+                <button onclick="ordem('WIN','BUY')" style="flex:1; background:#02c076; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">COMPRAR</button>
+                <button onclick="ordem('WIN','SELL')" style="flex:1; background:#cf304a; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">VENDER</button>
             </div>
         </div>
         <div class="card">
-            <h3>MINI DÓLAR <span id="r-wdo" style="font-size:12px; opacity:0.5">RSI: --</span></h3>
+            <h3>WDO <span id="r-wdo" style="font-size:12px; opacity:0.5">RSI: --</span></h3>
             <button id="btn-ia-wdo" class="btn-ia" onclick="execIA('WDO')"></button>
             <div id="p-wdo" class="price">0</div>
-            <div style="margin-bottom:15px">Tendência: <b id="t-wdo">--</b></div>
-            <div style="margin-bottom:15px">LOTES: <input type="number" id="l-wdo" value="1" min="1"></div>
-            <div style="display:flex; gap:10px;">
-                <button style="flex:1; background:#02c076; border:none; padding:12px; color:white; font-weight:bold; border-radius:4px; cursor:pointer;" onclick="ordem('WDO','BUY')">COMPRAR</button>
-                <button style="flex:1; background:#cf304a; border:none; padding:12px; color:white; font-weight:bold; border-radius:4px; cursor:pointer;" onclick="ordem('WDO','SELL')">VENDER</button>
+            <div style="margin-bottom:10px">Tendência: <b id="t-wdo">--</b></div>
+            <div style="margin-bottom:10px">Lotes: <input type="number" id="l-wdo" value="1" style="width:40px; background:black; color:gold; border:1px solid #444"></div>
+            <div style="display:flex; gap:5px;">
+                <button onclick="ordem('WDO','BUY')" style="flex:1; background:#02c076; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">COMPRAR</button>
+                <button onclick="ordem('WDO','SELL')" style="flex:1; background:#cf304a; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">VENDER</button>
             </div>
         </div>
     </div>
 
-    <div class="orders-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>Ativo</th>
-                    <th>Tipo</th>
-                    <th>Contratos</th>
-                    <th>Pivô Entrada</th>
-                    <th>Lucro/Prejuízo</th>
-                </tr>
-            </thead>
-            <tbody id="tabela-corpo">
-                </tbody>
-        </table>
-    </div>
+    <button onclick="ordem('ALL','PANIC')" style="width:950px; background:#ff3b3b; color:white; border:none; padding:12px; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🚨 ZERAR TODAS AS OPERAÇÕES 🚨</button>
 
-    <div class="bottom-section">
+    <table>
+        <thead><tr><th>Ativo</th><th>Tipo</th><th>Lotes</th><th>Preço</th><th>Lucro</th></tr></thead>
+        <tbody id="tabela-pos"></tbody>
+    </table>
+
+    <div class="bottom-grid">
         <div class="box"><canvas id="equityChart"></canvas></div>
         <div class="box">
-            <h4 style="margin:0 0 10px 0; color:gold">CHAT JURITY IA 🦅</h4>
+            <h4 style="margin-top:0; color:gold">JURITY CHAT</h4>
             <div id="chat-box"></div>
-            <input type="text" id="chat-in" placeholder="Pergunte sobre sua performance...">
+            <input type="text" id="chat-in" placeholder="Digite sua dúvida..." style="width:90%; background:#000; color:#fff; border:1px solid #444; padding:8px;">
         </div>
     </div>
 
     <script>
         const ctx = document.getElementById('equityChart').getContext('2d');
-        let chart = new Chart(ctx, { 
-            type:'line', 
-            data:{ labels:[], datasets:[{label:'Patrimônio', data:[], borderColor:'#f0b90b', backgroundColor:'rgba(240,185,11,0.1)', fill:true, tension:0.3}] }, 
-            options:{ maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{grid:{color:'#333'}}} } 
-        });
-
+        let chart = new Chart(ctx, { type:'line', data:{ labels:[], datasets:[{label:'Patrimônio', data:[], borderColor:'gold', backgroundColor:'rgba(255,215,0,0.1)', fill:true, tension:0.3}] }, options:{ maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{grid:{color:'#333'}}} } });
+        
         let gatilhos = { WIN: null, WDO: null };
+        let ultimoSinal = { WIN: "", WDO: "" };
+
+        function falar(txt) { const m = new SpeechSynthesisUtterance(txt); m.lang='pt-BR'; window.speechSynthesis.speak(m); }
 
         async function ordem(ativo, tipo) {
-            const lotes = document.getElementById(`l-${ativo.toLowerCase()}`).value;
-            await fetch('/set_order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ativo, tipo, lotes})});
+            const l = document.getElementById(`l-${ativo.toLowerCase()}`)?.value || 1;
+            await fetch('/set_order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ativo, tipo, lotes:l})});
+            falar(`${tipo === 'BUY' ? 'Compra' : tipo === 'SELL' ? 'Venda' : 'Zerar'} no ${ativo} enviada.`);
         }
 
         function execIA(ativo) { if(gatilhos[ativo]) ordem(ativo, gatilhos[ativo].acao); }
 
         async function update() {
             try {
-                const res = await fetch('/get_signal'); 
-                const d = await res.json();
-                
-                // Atualiza Ativos
+                const res = await fetch('/get_signal'); const d = await res.json();
                 ["win", "wdo"].forEach(a => {
                     document.getElementById(`p-${a}`).innerText = d[a].preco;
                     document.getElementById(`r-${a}`).innerText = `RSI: ${d[a].rsi}`;
-                    const tendEl = document.getElementById(`t-${a}`);
-                    tendEl.innerText = d[a].tend === "ALTA" ? "ALTA ↑" : "BAIXA ↓";
-                    tendEl.className = d[a].tend === "ALTA" ? "gain" : "loss";
-                    
+                    const t = document.getElementById(`t-${a}`);
+                    t.innerText = d[a].tend; t.className = d[a].tend === "ALTA" ? "gain" : "loss";
                     const btn = document.getElementById(`btn-ia-${a}`);
-                    if(d[a].decisao) { 
-                        btn.style.display = 'block'; 
-                        btn.innerText = d[a].decisao.msg; 
-                        gatilhos[a.toUpperCase()] = d[a].decisao; 
-                    } else { btn.style.display = 'none'; }
+                    if(d[a].decisao) {
+                        btn.style.display = 'block'; btn.innerText = d[a].decisao.msg;
+                        gatilhos[a.toUpperCase()] = d[a].decisao;
+                        if(d[a].decisao.msg !== ultimoSinal[a.toUpperCase()]) {
+                            falar(`Alerta Jurity: ${d[a].decisao.msg}`);
+                            ultimoSinal[a.toUpperCase()] = d[a].decisao.msg;
+                        }
+                    } else { btn.style.display = 'none'; ultimoSinal[a.toUpperCase()] = ""; }
                 });
 
-                // Financeiro
-                document.getElementById('f-saldo').innerText = `R$ ${d.fin.saldo_atual.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+                document.getElementById('f-saldo').innerText = `R$ ${d.fin.saldo_atual.toLocaleString()}`;
                 document.getElementById('f-dia').innerText = `R$ ${d.fin.resultado_dia.toFixed(2)}`;
                 document.getElementById('f-aberto').innerText = `R$ ${d.fin.em_aberto.toFixed(2)}`;
                 document.getElementById('f-aberto').className = d.fin.em_aberto >= 0 ? "gain" : "loss";
                 document.getElementById('f-conta').innerText = d.fin.conta;
 
-                // Tabela de Ordens
-                const corpo = document.getElementById('tabela-corpo');
-                corpo.innerHTML = d.posicoes.map(p => `
-                    <tr>
-                        <td><b>${p.symbol}</b></td>
-                        <td class="${p.type == 0 ? 'gain' : 'loss'}">${p.type == 0 ? 'COMPRA' : 'VENDA'}</td>
-                        <td>${p.volume}</td>
-                        <td>${p.price_open}</td>
-                        <td class="${p.profit >= 0 ? 'gain' : 'loss'}">R$ ${p.profit.toFixed(2)}</td>
-                    </tr>
+                document.getElementById('tabela-pos').innerHTML = d.posicoes.map(p => `
+                    <tr><td><b>${p.symbol}</b></td><td class="${p.type==0?'gain':'loss'}">${p.type==0?'COMPRA':'VENDA'}</td><td>${p.volume}</td><td>${p.price_open}</td><td class="${p.profit>=0?'gain':'loss'}">R$ ${p.profit.toFixed(2)}</td></tr>
                 `).join('');
 
-                // Gráfico
-                if(d.historico.length > 0) {
-                    chart.data.labels = d.historico.map(h => h.horario);
-                    chart.data.datasets[0].data = d.historico.map(h => h.acumulado);
-                    chart.update('none');
-                }
-            } catch(e) { console.log("Erro de conexão..."); }
+                chart.data.labels = d.historico.map(h => h.horario);
+                chart.data.datasets[0].data = d.historico.map(h => h.acumulado);
+                chart.update('none');
+            } catch(e) {}
         }
 
         document.getElementById('chat-in').addEventListener('keypress', async (e) => {
             if(e.key === 'Enter') {
-                const input = e.target;
                 const box = document.getElementById('chat-box');
-                box.innerHTML += `<p><b>Você:</b> ${input.value}</p>`;
-                box.scrollTop = box.scrollHeight;
-                const r = await fetch('/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mensagem:input.value})});
-                const data = await r.json();
-                box.innerHTML += `<p style="color:#f0b90b"><b>Jurity IA:</b> ${data.resposta}</p>`;
-                input.value = ''; box.scrollTop = box.scrollHeight;
+                box.innerHTML += `<p><b>Você:</b> ${e.target.value}</p>`;
+                const res = await fetch('/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mensagem:e.target.value})});
+                const data = await res.json();
+                box.innerHTML += `<p style="color:gold"><b>Jurity IA:</b> ${data.resposta}</p>`;
+                e.target.value = ''; box.scrollTop = box.scrollHeight;
             }
         });
 
