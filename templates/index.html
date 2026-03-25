@@ -2,60 +2,64 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>JURITY IA - DASHBOARD</title>
+    <title>Jurity IA - Trading Dashboard</title>
     <style>
-        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-        .card { background: #1e2329; padding: 20px; border-radius: 10px; width: 300px; text-align: center; border: 1px solid #333; }
-        .price { font-size: 38px; color: #f0b90b; font-family: monospace; }
-        .btn-buy { background: #00ff88; color: black; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; }
+        body { background: #0b0e11; color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .fin-panel { display: flex; gap: 15px; width: 640px; margin-bottom: 15px; }
+        .card { background: #1e2329; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; flex: 1; }
+        .price { font-size: 32px; color: #f0b90b; font-weight: bold; }
+        .btn-buy { background: #00ff88; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; }
         .btn-sell { background: #ff3b3b; color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; }
-        #chat { height: 150px; overflow-y: auto; background: #000; padding: 10px; margin: 10px 0; width: 600px; border: 1px solid #444; }
+        .btn-panic { background: #ff3b3b; color: white; border: none; padding: 15px; font-weight: bold; cursor: pointer; width: 640px; border-radius: 8px; margin-top: 10px; text-transform: uppercase; }
+        #chat { height: 120px; overflow-y: auto; background: #000; width: 620px; padding: 10px; margin-top: 15px; border: 1px solid #444; font-size: 13px; }
         .gain { color: #00ff88; } .loss { color: #ff3b3b; }
     </style>
 </head>
 <body>
-    <h1>JURITY IA 🦅</h1>
-    <div style="display:flex; gap:20px;">
+    <h2 style="color:#f0b90b">JURITY IA 🦅</h2>
+
+    <div class="fin-panel">
         <div class="card">
-            <h3>WIN (ÍNDICE)</h3>
-            <div id="p-win" class="price">000.000</div>
-            <div id="s-win">Aguardando...</div>
-            <div style="margin-top:15px; display:flex; justify-content: space-between;">
-                <button class="btn-buy" onclick="enviarOrdem('WIN', 'BUY')">COMPRAR</button>
-                <button class="btn-sell" onclick="enviarOrdem('WIN', 'SELL')">VENDER</button>
-            </div>
+            <small style="color:#848e9c">LUCRO HOJE</small>
+            <div id="fin-hoje" style="font-size:20px">R$ 0,00</div>
         </div>
         <div class="card">
-            <h3>WDO (DÓLAR)</h3>
-            <div id="p-wdo" class="price">0.000,00</div>
-            <div id="s-wdo">Aguardando...</div>
-            <div style="margin-top:15px; display:flex; justify-content: space-between;">
-                <button class="btn-buy" onclick="enviarOrdem('WDO', 'BUY')">COMPRAR</button>
-                <button class="btn-sell" onclick="enviarOrdem('WDO', 'SELL')">VENDER</button>
-            </div>
+            <small style="color:#848e9c">EM ABERTO</small>
+            <div id="fin-aberto" style="font-size:20px">R$ 0,00</div>
+            <small id="fin-qtd" style="color:#848e9c">0 ordens</small>
         </div>
     </div>
 
-    <div id="chat"></div>
-    <input type="text" id="msg-in" placeholder="Dúvida? Enter" style="width:620px; padding:10px; background:#1e2329; color:white; border:1px solid #444;">
+    <div style="display:flex; gap:15px; width:640px">
+        <div class="card">
+            <h3>WIN</h3>
+            <div id="p-win" class="price">0</div>
+            <div id="s-win" style="font-size:12px">...</div>
+            <div style="margin-top:10px"><button class="btn-buy" onclick="ordem('WIN','BUY')">COMPRA</button> <button class="btn-sell" onclick="ordem('WIN','SELL')">VENDA</button></div>
+        </div>
+        <div class="card">
+            <h3>WDO</h3>
+            <div id="p-wdo" class="price">0</div>
+            <div id="s-wdo" style="font-size:12px">...</div>
+            <div style="margin-top:10px"><button class="btn-buy" onclick="ordem('WDO','BUY')">COMPRA</button> <button class="btn-sell" onclick="ordem('WDO','SELL')">VENDA</button></div>
+        </div>
+    </div>
 
-    <table border="1" style="width:620px; margin-top:20px; border-collapse: collapse;">
-        <thead><tr><th>HORA</th><th>ATIVO</th><th>ENTRADA</th><th>TENDÊNCIA</th><th>RESULTADO 15M</th></tr></thead>
-        <tbody id="l-body"></tbody>
+    <button class="btn-panic" onclick="ordem('ALL','PANIC')">🚨 ZERAR TODAS AS POSIÇÕES 🚨</button>
+
+    <div id="chat"></div>
+    <input type="text" id="msg-in" placeholder="Dúvida? Enter" style="width:620px; padding:10px; background:#1e2329; color:white; border:1px solid #444; margin-top:10px">
+
+    <table border="1" style="width:640px; margin-top:15px; border-collapse:collapse; font-size:12px">
+        <thead><tr style="color:#848e9c"><th>HORA</th><th>ATIVO</th><th>ENTRADA</th><th>TENDÊNCIA</th><th>RESULTADO</th></tr></thead>
+        <tbody id="l-body" style="text-align:center"></tbody>
     </table>
 
     <script>
-        async function enviarOrdem(ativo, tipo) {
-            const preco = parseFloat(document.getElementById(`p-${ativo.toLowerCase()}`).innerText.replace('.',''));
-            const offset = ativo === 'WIN' ? 150 : 5.0;
-            const payload = {
-                ativo: ativo, tipo: tipo, preco: preco,
-                sl: tipo === 'BUY' ? preco - offset : preco + offset,
-                tp: tipo === 'BUY' ? preco + offset : preco - offset,
-                lotes: 1
-            };
-            const res = await fetch('/set_order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-            alert("Ordem enviada para a fila do MT5!");
+        async function ordem(ativo, tipo) {
+            const preco = parseFloat(document.getElementById(`p-${ativo.toLowerCase()}`)?.innerText || 0);
+            await fetch('/set_order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ativo, tipo, preco, sl:0, tp:0, lotes:1})});
+            alert(tipo === 'PANIC' ? "ENVIANDO COMANDO DE EMERGÊNCIA!" : "Ordem enviada para fila.");
         }
 
         async function update() {
@@ -63,13 +67,15 @@
                 const r = await fetch(`/get_signal?ativo=${a}`);
                 const d = await r.json();
                 document.getElementById(`p-${a.toLowerCase()}`).innerText = d.preco;
-                document.getElementById(`s-${a.toLowerCase()}`).innerText = `${d.sinal} | RSI: ${d.rsi}`;
+                document.getElementById(`s-${a.toLowerCase()}`).innerText = `RSI: ${d.rsi} | ${d.tendencia}`;
+                
+                document.getElementById('fin-hoje').innerText = `R$ ${d.fin.lucro_hoje.toFixed(2)}`;
+                document.getElementById('fin-hoje').className = d.fin.lucro_hoje >= 0 ? 'gain' : 'loss';
+                document.getElementById('fin-aberto').innerText = `R$ ${d.fin.em_aberto.toFixed(2)}`;
+                document.getElementById('fin-qtd').innerText = `${d.fin.qtd_ordens} ordens ativas`;
+                
+                document.getElementById('l-body').innerHTML = d.logs.map(l => `<tr><td>${l.horario}</td><td>${l.ativo}</td><td>${l.preco}</td><td>${l.tendencia}</td><td class="${l.resultado.includes('GAIN')?'gain':'loss'}">${l.resultado}</td></tr>`).join('');
             }
-            const rl = await fetch('/get_log');
-            const logs = await rl.json();
-            document.getElementById('l-body').innerHTML = logs.map(l => `
-                <tr><td>${l.horario}</td><td>${l.ativo}</td><td>${l.preco}</td><td>${l.tendencia}</td><td class="${l.resultado.includes('GAIN')?'gain':'loss'}">${l.resultado}</td></tr>
-            `).join('');
         }
 
         document.getElementById('msg-in').addEventListener('keypress', async (e) => {
@@ -81,8 +87,7 @@
                 document.getElementById('chat').innerHTML += `<p style="color:#00ff88">Jurity: ${d.resposta}</p>`;
             }
         });
-
-        setInterval(update, 2000);
+        setInterval(update, 2500);
     </script>
 </body>
 </html>
