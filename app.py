@@ -10,7 +10,7 @@ app = Flask(__name__)
 # --- CONFIGURAÇÃO DA JURITY IA ---
 # REMOVA QUALQUER ESPAÇO ANTES DA LINHA ABAIXO:
 GEMINI_KEY = "AIzaSyAMg1aMjn3LMQAyUI2D2LP-If7hrIzALd4"
-genai.configure(api_key=GEMINI_KEY)
+genai.configure(api_key=GEMINI_KEY, transport='rest')
 
 # Usando o nome direto do modelo para evitar o erro 404
 model = genai.GenerativeModel('gemini-2.5-flash')
@@ -70,28 +70,38 @@ def get_signal():
         "status": dados_reais["status"]
     })
 
-# 2. Rota do Chat com Debug
+# --- FUNÇÃO DO CHAT (Substitua todo o seu @app.route('/chat'...) por isso) ---
 @app.route('/chat', methods=['POST'])
 def chat():
+    # Pega a mensagem do usuário vinda do site
     user_msg = request.json.get('mensagem')
+    
+    # Pega o preço atual que o MT5 enviou (ou usa o padrão)
     preco_atual = dados_reais.get("preco", "aguardando dados")
     
-    # Prompt da Jurity
-    prompt = f"Você é a Jurity IA. Preço: {preco_atual}. Pergunta: {user_msg}"
+    # O "Cérebro" da Jurity: Definimos a personalidade dela aqui
+    prompt = f"""
+    Você é a Jurity IA, uma assistente senior de Day Trade na B3 (Mini Índice).
+    Contexto: O preço atual é {preco_atual}. 
+    Instrução: Responda de forma técnica, curta e direta como uma trader profissional.
+    Pergunta: {user_msg}
+    """
     
     try:
-        # Tentamos o modelo Flash (o mais rápido)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # Tenta o modelo 1.5 Flash (mais moderno)
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         return jsonify({"resposta": response.text})
+        
     except Exception as e:
+        # PLANO B: Se o Flash der erro 404, o Gemini 1.0 Pro assume na hora
         try:
-            # SE O FLASH DER 404, O PRO NUNCA FALHA:
             model_pro = genai.GenerativeModel('gemini-1.0-pro')
             response = model_pro.generate_content(prompt)
             return jsonify({"resposta": response.text})
         except Exception as e2:
-            return jsonify({"resposta": f"Erro Final: {str(e2)}"})
+            # Se tudo falhar, ele mostra o erro real para sabermos o que é
+            return jsonify({"resposta": f"Jurity Offline. Erro: {str(e2)}"})
 # --- INICIALIZAÇÃO COM INDENTAÇÃO CORRETA ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
