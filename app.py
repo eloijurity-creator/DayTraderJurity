@@ -13,7 +13,7 @@ GEMINI_KEY = "AIzaSyAMg1aMjn3LMQAyUI2D2LP-If7hrIzALd4"
 genai.configure(api_key=GEMINI_KEY)
 
 # Usando o nome direto do modelo para evitar o erro 404
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- VARIÁVEIS GLOBAIS ---
 dados_reais = {
