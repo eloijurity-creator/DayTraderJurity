@@ -7,67 +7,112 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; --text: #eaeaea; }
+        :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; --text: #eaeaea; --panel-bg: #0d1117; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        .header { text-align: center; margin-bottom: 20px; width: 100%; }
-        .header h1 { margin: 0; font-size: 32px; color: var(--yellow); }
-        .header p { color: #888; margin: 5px 0; }
+        /* Cabeçalho Profissional com Logotipo */
+        .header { display: flex; align-items: center; justify-content: center; width: 100%; max-width: 1200px; margin-bottom: 30px; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
+        .logo-container { display: flex; align-items: center; gap: 15px; }
+        .logo { width: 50px; height: 50px; border-radius: 12px; border: 2px solid var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+        .title-group { display: flex; flex-direction: column; }
+        .title-group h1 { margin: 0; font-size: 36px; color: var(--yellow); text-transform: uppercase; letter-spacing: 2px; }
+        .title-group p { margin: 0; font-size: 14px; color: #888; }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
+        /* Grade do Dashboard */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; width: 100%; max-width: 1200px; }
         
-        .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); transition: 0.3s; }
-        .card:hover { border-color: var(--yellow); }
+        /* Estilo dos Cards Premium */
+        .card { background: var(--card); border-radius: 18px; padding: 25px; border: 1px solid var(--border); transition: 0.3s; box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+        .card:hover { border-color: var(--yellow); transform: translateY(-3px); }
 
-        /* Gráfico */
-        .chart-container { grid-column: span 2; min-height: 300px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-header h3 { margin: 0; font-size: 1.1em; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
 
-        /* Tabela de Ordens */
-        .orders-container { grid-column: span 2; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .price-group { text-align: right; }
+        .price { font-size: 2.8em; font-weight: 700; color: var(--text); }
+        .status { font-size: 0.9em; font-weight: bold; padding: 5px 10px; border-radius: 8px; text-transform: uppercase; }
+        .online { background-color: rgba(0,255,136,0.1); color: var(--green); }
+        .offline { background-color: rgba(136,136,136,0.1); color: #888; }
+
+        /* Gráfico de Performance */
+        .chart-container { grid-column: span 2; min-height: 350px; }
+        .chart-wrapper { position: relative; height: 100%; width: 100%; }
+
+        /* Tabela de Ordens e Pânico */
+        .orders-container { grid-column: span 2; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; color: var(--text); }
         th { text-align: left; color: #888; padding: 12px; border-bottom: 1px solid var(--border); }
         td { padding: 12px; border-bottom: 1px solid #222; }
 
-        /* Chat */
-        .chat-container { background: #1e2329; border-radius: 15px; padding: 20px; border: 1px solid var(--border); width: 100%; max-width: 1200px; margin-top: 20px; }
-        #chat-window { height: 150px; overflow-y: auto; background: #0b0e11; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 10px; }
+        /* Área de Chat da IA */
+        .chat-container { grid-column: span 2; background-color: var(--panel-bg); border-radius: 18px; padding: 25px; border: 1px solid var(--border); }
+        #chat-window { height: 180px; overflow-y: auto; background-color: #0b1117; padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 15px; font-size: 0.95em; color: #aaa; }
+        .user-msg { color: var(--yellow); font-weight: bold; }
+        .ia-msg { color: var(--green); font-weight: bold; }
 
-        .btn-fechar { background: var(--red); color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-panic { background: var(--red); color: white; border: none; padding: 10px 20px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        /* Botões Interativos */
+        .btn-fechar { background: rgba(231,76,60,0.1); color: var(--red); border: 1px solid var(--red); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-fechar:hover { background: var(--red); color: white; }
+        .btn-panic { background: rgba(231,76,60,0.1); color: var(--red); border: 1px solid var(--red); padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-panic:hover { background: var(--red); color: white; }
         
-        input { background: #0b0e11; border: 1px solid #333; color: white; padding: 10px; border-radius: 5px; width: calc(100% - 110px); }
-        button#send-chat { background: var(--yellow); border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        /* Entrada de Chat */
+        .chat-input-group { display: flex; gap: 12px; }
+        input[type="text"] { flex-grow: 1; background-color: #0b1117; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; font-size: 1em; }
+        button#send-chat { background: var(--yellow); border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1em; transition: 0.2s; }
+        button#send-chat:hover { background: white; color: black; }
+        
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Jurity <span style="color:white">IA</span></h1>
-        <p>Conta: <span id="conta-id" style="color:var(--yellow)">Conectando...</span> | Equity: <span id="saldo-atual" style="color:var(--green)">R$ 0.00</span></p>
+        <div class="logo-container">
+            <img src="/static/logo_jurity.png" alt="Logo Jurity IA" class="logo">
+            <div class="title-group">
+                <h1>Jurity IA</h1>
+                <p>Conta: <span id="conta-id" style="color:var(--yellow)">Conectando...</span> | Equity: <span id="saldo-atual" style="color:var(--green)">R$ 0.00</span></p>
+            </div>
+        </div>
     </div>
 
     <div class="dashboard-grid">
         <div class="card">
-            <h3><i class="fas fa-chart-line"></i> Mini Índice (WIN)</h3>
-            <h2 id="preco-win" style="font-size: 36px;">---</h2>
-            <div id="status-win" class="status">Offline</div>
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line"></i> Mini Índice (WIN)</h3>
+                <div id="status-win" class="status offline">Offline</div>
+            </div>
+            <div class="price-group">
+                <div id="preco-win" class="price">---</div>
+            </div>
         </div>
 
         <div class="card">
-            <h3><i class="fas fa-chart-line"></i> Mini Dólar (WDO)</h3>
-            <h2 id="preco-wdo" style="font-size: 36px;">---</h2>
-            <div id="status-wdo" class="status">Offline</div>
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line"></i> Mini Dólar (WDO)</h3>
+                <div id="status-wdo" class="status offline">Offline</div>
+            </div>
+            <div class="price-group">
+                <div id="preco-wdo" class="price">---</div>
+            </div>
         </div>
 
         <div class="card chart-container">
-            <h3><i class="fas fa-history"></i> Curva de Equity</h3>
-            <canvas id="perfChart"></canvas>
+            <div class="card-header">
+                <h3><i class="fas fa-chart-area"></i> Gráfico de Performance (Equity Curve)</h3>
+                <i class="fas fa-history" style="color:var(--yellow); font-size:1.4em;"></i>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="perfChart"></canvas>
+            </div>
         </div>
 
         <div class="card orders-container">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3><i class="fas fa-list"></i> Ordens em Aberto</h3>
-                <button class="btn-panic" style="width: auto;" onclick="enviarOrdem('PANIC', 0)">FECHAR TUDO (PÂNICO)</button>
+            <div class="card-header" style="margin-bottom: 10px;">
+                <h3><i class="fas fa-list"></i> Ordens em Aberto & Stops</h3>
+                <button class="btn-panic" onclick="zerarTudo()">
+                    <i class="fas fa-exclamation-triangle"></i> ZERAR TUDO (PÂNICO)
+                </button>
             </div>
             <table>
                 <thead>
@@ -75,83 +120,119 @@
                         <th>Ativo</th><th>Lado</th><th>Stop Loss</th><th>Take Profit</th><th>Dist. SL</th><th>Lucro</th><th>Ação</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-ordens"></tbody>
+                <tbody id="tabela-ordens">
+                    </tbody>
             </table>
         </div>
-    </div>
 
-    <div class="chat-container">
-        <h3><i class="fas fa-robot"></i> Jurity IA Analista</h3>
-        <div id="chat-window"></div>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="user-input" placeholder="Pergunte sobre o mercado...">
-            <button id="send-chat" onclick="enviarPergunta()">Enviar</button>
+        <div class="chat-container">
+            <div class="card-header">
+                <h3><i class="fas fa-robot"></i> Jurity Analista (IA Chatbot)</h3>
+                <i class="fas fa-headset" style="color:var(--green); font-size:1.4em;"></i>
+            </div>
+            <div id="chat-window">
+                <p>Olá! Sou a Jurity IA. Estou monitorando os contratos de WIN e WDO vigentes. Como posso te ajudar com a análise de hoje?</p>
+            </div>
+            <div class="chat-input-group">
+                <input type="text" id="user-input" placeholder="Pergunte sobre tendências ou análise técnica...">
+                <button id="send-chat" onclick="enviarPergunta()">Enviar</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Configuração do Gráfico
+        // Configuração do Gráfico de Performance
         const ctx = document.getElementById('perfChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [{ label: 'Saldo R$', data: [], borderColor: '#f0b90b', tension: 0.3, fill: false }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { grid: { color: '#222' } } } }
+            data: { labels: [], datasets: [{ label: 'Saldo Atual (R$)', data: [], borderColor: '#f0b90b', backgroundColor: 'rgba(240, 185, 11, 0.1)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false, grid: { color: '#222' } }, y: { grid: { color: '#333' }, ticks: { color: '#aaa', callback: (value) => 'R$ ' + value } } }, plugins: { legend: { display: false } } }
         });
 
-        // Atualização Geral
+        // Atualização Dinâmica do Dashboard (WIN, WDO, Saldo, Tabela)
         async function updateDashboard() {
             try {
-                // Atualiza Preços WIN/WDO
+                // Atualiza Mini Índice (WIN)
                 const resWin = await fetch('/get_signal?ativo=WIN');
                 const dataWin = await resWin.json();
                 document.getElementById('preco-win').innerText = dataWin.preco || '---';
                 document.getElementById('status-win').innerText = dataWin.status;
+                document.getElementById('status-win').className = `status ${dataWin.status.toLowerCase()}`;
 
+                // Atualiza Mini Dólar (WDO)
                 const resWdo = await fetch('/get_signal?ativo=WDO');
                 const dataWdo = await resWdo.json();
                 document.getElementById('preco-wdo').innerText = dataWdo.preco || '---';
                 document.getElementById('status-wdo').innerText = dataWdo.status;
+                document.getElementById('status-wdo').className = `status ${dataWdo.status.toLowerCase()}`;
 
-                // Atualiza Financeiro e Tabela
+                // Atualiza Financeiro, Saldo e Tabela
                 const resFin = await fetch('/get_financeiro');
                 const fin = await resFin.json();
                 document.getElementById('saldo-atual').innerText = `R$ ${fin.saldo_atual.toFixed(2)}`;
                 document.getElementById('conta-id').innerText = fin.login || fin.conta;
 
+                // Constrói a tabela de ordens
                 let html = '';
                 fin.posicoes.forEach(p => {
                     html += `<tr>
                         <td><b>${p.ativo}</b></td>
-                        <td style="color:${p.tipo=='COMPRA'?'#00ff88':'#ff4d4d'}">${p.tipo}</td>
-                        <td>${p.sl}</td><td>${p.tp}</td>
-                        <td style="${p.dist_sl_pontos < 30 ? 'color:red; font-weight:bold;' : ''}">${p.dist_sl_pontos} pts</td>
-                        <td style="font-weight:bold">R$ ${p.lucro}</td>
-                        <td><button class="btn-fechar" onclick="fecharIndividual(${p.ticket})">Fechar</button></td>
+                        <td style="color:${p.tipo=='COMPRA'?'#00ff88':'#ff4d4d'}; font-weight:bold;">${p.tipo}</td>
+                        <td style="color:var(--red);">${p.sl || '---'}</td>
+                        <td style="color:var(--green);">${p.tp || '---'}</td>
+                        <td style="${p.dist_sl_pontos < 30 ? 'color:var(--red); font-weight:bold; animation: blink 1s infinite;' : ''}">${p.dist_sl_pontos} pts</td>
+                        <td style="font-weight:bold; color: ${p.lucro >= 0 ? 'var(--green)' : 'var(--red)'}">R$ ${p.lucro}</td>
+                        <td><button class="btn-fechar" onclick="fecharOrdem(${p.ticket})">Fechar</button></td>
                     </tr>`;
                 });
-                document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="7">Nenhuma ordem aberta</td></tr>';
-            } catch (e) { console.error("Erro na atualização:", e); }
+                document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="7" style="text-align:center; padding:20px; color:#555;">Nenhuma ordem aberta no momento.</td></tr>';
+            
+            } catch (e) { console.error("Erro na atualização do dashboard:", e); }
         }
 
+        // Atualização do Gráfico de Equity
         async function updateChart() {
-            const res = await fetch('/get_historico');
-            const hist = await res.json();
-            chart.data.labels = hist.map(h => h.x);
-            chart.data.datasets[0].data = hist.map(h => h.y);
-            chart.update();
+            try {
+                const res = await fetch('/get_historico');
+                const hist = await res.json();
+                chart.data.labels = hist.map(h => h.x);
+                chart.data.datasets[0].data = hist.map(h => h.y);
+                chart.update();
+            } catch (e) { console.error("Erro na atualização do gráfico:", e); }
         }
 
-        async function fecharIndividual(ticket) {
-            await fetch('/order', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ tipo: 'FECHAR_TICKET', ticket: ticket })
-            });
-            alert("Comando de fechamento enviado!");
+        // Comandos de Negociação
+        async function fecharOrdem(ticket) {
+            await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: 'FECHAR_TICKET', ticket: ticket }) });
+            alert(`Comando de fechamento enviado para ticket ${ticket}!`);
         }
 
+        async function zerarTudo() {
+            if(confirm("Tem certeza que deseja fechar TODAS as posições imediatamente?")) {
+                await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: 'PANIC', ativo: 'ALL' }) });
+                alert("COMANDO DE PÂNICO ENVIADO! Todas as ordens serão encerradas.");
+            }
+        }
+
+        // Chat com a IA
         async function enviarPergunta() {
             const input = document.getElementById('user-input');
             const chatWin = document.getElementById('chat-window');
             if(!input.value) return;
-            chatWin.innerHTML += `<p style="color:var(--yellow)"><b>Você:</b> ${input.value}</
+            chatWin.innerHTML += `<p><span class="user-msg">Você:</span> ${input.value}</p>`;
+            
+            try {
+                const res = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ mensagem: input.value }) });
+                const data = await res.json();
+                chatWin.innerHTML += `<p><span class="ia-msg">Jurity IA:</span> ${data.resposta}</p>`;
+                chatWin.scrollTop = chatWin.scrollHeight;
+                input.value = '';
+            } catch (e) { chatWin.innerHTML += `<p style="color:var(--red)"><b>Erro:</b> Não foi possível conectar à IA.</p>`; }
+        }
+
+        // Ciclos de Atualização (Dashboard e Gráfico)
+        setInterval(updateDashboard, 2000); // 2 segundos
+        setInterval(updateChart, 5000);    // 5 segundos (Gráfico)
+    </script>
+</body>
+</html>
