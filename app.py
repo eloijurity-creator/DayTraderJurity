@@ -4,7 +4,7 @@ import numpy as np
 import random
 import os
 import google.generativeai as genai
-
+os.environ["GOOGLE_API_USE_MTLS"] = "never" # Força conexão padrão
 app = Flask(__name__)
 
 # --- CONFIGURAÇÃO DO GEMINI ---
