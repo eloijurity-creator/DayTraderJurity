@@ -96,8 +96,8 @@ def chat():
             return jsonify({"resposta": response.text})
         except:
             return jsonify({"resposta": f"Erro Técnico: {str(e)}. Verifique se a biblioteca google-generativeai está na versão 0.7.2 no requirements.txt"})
-    
-   if __name__ == '__main__':
-    # Estas linhas ABAIXO precisam de 4 espaços (ou um TAB) no início:
+# Certifique-se que não há espaços antes do 'if' abaixo
+if __name__ == '__main__':
+    # Aqui deve haver exatamente 4 espaços ou 1 TAB
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
