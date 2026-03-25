@@ -7,47 +7,36 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO IA ---
+# --- CONFIGURAÇÃO GEMINI 2.5 FLASH ---
 GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
 
-# --- ESTADO DO SISTEMA ---
+# --- BANCO DE DADOS EM MEMÓRIA ---
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
 financeiro = {"resultado_dia": 0.0, "em_aberto": 0.0, "saldo_atual": 0.0, "conta": "Desconectado"}
 posicoes_abertas = [] 
-historico_performance = []
+historico_performance = [] # Para o Gráfico
 fila_ordens = {"WIN": None, "WDO": None, "PANIC": False}
 
 def calcular_metricas(ativo):
     precos = historico_precos[ativo]
     if len(precos) < 20: return {"tendencia": "LATERAL", "rsi": 50.0, "forca": 0}
-    
     df = pd.DataFrame(precos, columns=['close'])
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
     rs = gain / loss.replace(0, 0.001)
     rsi = 100 - (100 / (1 + rs.iloc[-1]))
-    
     ma10, ma30 = df['close'].tail(10).mean(), df['close'].tail(30).mean()
-    tendencia = "ALTA" if ma10 > ma30 else "BAIXA"
+    tend = "ALTA" if ma10 > ma30 else "BAIXA"
     
-    # Cálculo de Confiança (0-100%)
+    # Confiança para One-Click
     forca = 0
-    if tendencia == "ALTA" and rsi < 40: forca = 70 + (40 - rsi)
-    if tendencia == "BAIXA" and rsi > 60: forca = 70 + (rsi - 60)
-    
-    return {"tendencia": tendencia, "rsi": rsi, "forca": min(int(forca), 100)}
-
-def gerar_decisao_ia(m):
-    """Gera o gatilho para o botão One-Click"""
-    if m['forca'] >= 75:
-        acao = "BUY" if m['tendencia'] == "ALTA" else "SELL"
-        msg = f"IA: {m['forca']}% CONFIANÇA EM {acao}"
-        return {"acao": acao, "msg": msg, "confianca": m['forca']}
-    return None
+    if tend == "ALTA" and rsi < 40: forca = 70 + (40 - rsi)
+    if tend == "BAIXA" and rsi > 60: forca = 70 + (rsi - 60)
+    return {"tendencia": tend, "rsi": rsi, "forca": min(int(forca), 100)}
 
 @app.route('/')
 def index(): return render_template('index.html')
@@ -68,20 +57,39 @@ def atualizar_fin():
     data = request.json
     financeiro.update(data)
     posicoes_abertas = data.get('posicoes', [])
+    
+    # Log de Performance para o Gráfico (salva a cada mudança de saldo)
     agora = datetime.datetime.now().strftime("%H:%M:%S")
-    if not historico_performance or historico_performance[-1]["acumulado"] != data.get('saldo_atual'):
-        historico_performance.append({"horario": agora, "acumulado": data.get('saldo_atual')})
-        if len(historico_performance) > 60: historico_performance.pop(0)
+    if not historico_performance or historico_performance[-1]["acumulado"] != data['saldo_atual']:
+        historico_performance.append({"horario": agora, "acumulado": data['saldo_atual']})
+        if len(historico_performance) > 50: historico_performance.pop(0)
     return "OK"
 
 @app.route('/get_signal')
 def get_signal():
     m_win, m_wdo = calcular_metricas("WIN"), calcular_metricas("WDO")
+    
+    def gerar_decisao(m):
+        if m['forca'] >= 75:
+            acao = "BUY" if m['tendencia'] == "ALTA" else "SELL"
+            return {"acao": acao, "msg": f"IA: {m['forca']}% CONF. EM {acao}", "confianca": m['forca']}
+        return None
+
     return jsonify({
-        "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "decisao": gerar_decisao_ia(m_win)},
-        "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "decisao": gerar_decisao_ia(m_wdo)},
+        "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "decisao": gerar_decisao(m_win)},
+        "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "decisao": gerar_decisao(m_wdo)},
         "fin": financeiro, "posicoes": posicoes_abertas, "historico": historico_performance
     })
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    msg = request.json.get('mensagem')
+    prompt = f"Trader pergunta: {msg}. Contexto: WIN {dados_reais['WIN']['preco']}, Saldo R$ {financeiro['saldo_atual']}. Responda como Jurity 2.5 Flash."
+    try:
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        res = model.generate_content(prompt)
+        return jsonify({"resposta": res.text})
+    except: return jsonify({"resposta": "IA Indisponível."})
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
@@ -102,4 +110,4 @@ def get_orders():
     return jsonify(ordem)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    app.run(host='0.0.0.0', port=5000)
