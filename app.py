@@ -70,31 +70,23 @@ def get_signal():
         "status": dados_reais["status"]
     })
 
+# 2. Rota do Chat com Debug
 @app.route('/chat', methods=['POST'])
 def chat():
     user_msg = request.json.get('mensagem')
     preco_atual = dados_reais.get("preco", "aguardando dados")
     
-    # Prompt com a personalidade Jurity
-    prompt = f"""
-    Você é a Jurity IA, uma assistente senior de Day Trade na B3, especializada em Mini Índice.
-    Contexto Atual do Mercado: O preço está em {preco_atual} pontos.
-    Instrução: Responda ao trader de forma técnica, curta e direta. Não use saudações longas.
-    Pergunta do Trader: {user_msg}
-    """
+    prompt = f"Você é a Jurity IA. Preço: {preco_atual}. Pergunta: {user_msg}"
     
     try:
+        # Tentativa com o modelo padrão
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         return jsonify({"resposta": response.text})
     except Exception as e:
-        # Fallback para o modelo Pro se o Flash der erro 404
-        try:
-            fallback_model = genai.GenerativeModel('gemini-pro')
-            res = fallback_model.generate_content(prompt)
-            return jsonify({"resposta": res.text})
-        except:
-            return jsonify({"resposta": "Jurity está offline. Verifique a chave API no Render."})
-
+        # SE DER ERRO, ELE VAI MOSTRAR O QUE É (Ex: API_KEY_INVALID ou REGION_NOT_SUPPORTED)
+        erro_msg = str(e)
+        return jsonify({"resposta": f"Erro detectado: {erro_msg}"})
 # --- INICIALIZAÇÃO COM INDENTAÇÃO CORRETA ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
