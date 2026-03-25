@@ -7,15 +7,22 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO IA ---
+# --- CONFIGURAÇÃO IA JURITY 2.5 ---
 GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
+else:
+    print("AVISO: Chave GEMINI_KEY não encontrada nas variáveis de ambiente!")
 
 # --- VARIÁVEIS GLOBAIS ---
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
-financeiro = {"resultado_dia": 0.0, "em_aberto": 0.0, "saldo_atual": 0.0, "conta": "Desconectado"}
+financeiro = {
+    "resultado_dia": 0.0, 
+    "em_aberto": 0.0, 
+    "saldo_atual": 0.0, 
+    "conta": "Desconectado"
+}
 posicoes_abertas = [] 
 historico_performance = []
 fila_ordens = {"WIN": None, "WDO": None, "PANIC": False}
@@ -46,8 +53,9 @@ def atualizar():
     data = request.json
     ativo = data.get('ativo')
     if ativo in dados_reais:
-        dados_reais[ativo]["preco"] = data.get('preco')
-        historico_precos[ativo].append(data.get('preco'))
+        preco = data.get('preco')
+        dados_reais[ativo]["preco"] = preco
+        historico_precos[ativo].append(preco)
         if len(historico_precos[ativo]) > 100: historico_precos[ativo].pop(0)
     return "OK"
 
@@ -56,15 +64,15 @@ def atualizar_fin():
     global financeiro, posicoes_abertas, historico_performance
     data = request.json
     financeiro.update({
-        "resultado_dia": data.get('resultado_dia'),
-        "em_aberto": data.get('em_aberto'),
-        "saldo_atual": data.get('saldo_atual'),
-        "conta": data.get('conta')
+        "resultado_dia": data.get('resultado_dia', 0.0),
+        "em_aberto": data.get('em_aberto', 0.0),
+        "saldo_atual": data.get('saldo_atual', 0.0),
+        "conta": data.get('conta', "Desconectado")
     })
     posicoes_abertas = data.get('posicoes', [])
     agora = datetime.datetime.now().strftime("%H:%M:%S")
-    if not historico_performance or historico_performance[-1]["acumulado"] != data.get('saldo_atual'):
-        historico_performance.append({"horario": agora, "acumulado": data.get('saldo_atual')})
+    if not historico_performance or historico_performance[-1]["acumulado"] != financeiro["saldo_atual"]:
+        historico_performance.append({"horario": agora, "acumulado": financeiro["saldo_atual"]})
         if len(historico_performance) > 60: historico_performance.pop(0)
     return "OK"
 
@@ -82,12 +90,24 @@ def get_signal():
 @app.route('/chat', methods=['POST'])
 def chat():
     user_msg = request.json.get('mensagem')
-    prompt = f"Analise como Jurity 2.5 Flash: {user_msg}. Contexto: WIN={dados_reais['WIN']['preco']}, WDO={dados_reais['WDO']['preco']}, Equity={financeiro['saldo_atual']}."
+    m_win, m_wdo = calcular_metricas("WIN"), calcular_metricas("WDO")
+    
+    # Prompt rico em contexto para a Gemini 2.5 Flash
+    prompt = (
+        f"Você é a Jurity IA 2.5 Flash, especialista em Day Trade. "
+        f"CONTEXTO ATUAL: WIN: {dados_reais['WIN']['preco']} (RSI {m_win['rsi']:.1f}, {m_win['tendencia']}), "
+        f"WDO: {dados_reais['WDO']['preco']} (RSI {m_wdo['rsi']:.1f}, {m_wdo['tendencia']}). "
+        f"FINANCEIRO: Saldo R$ {financeiro['saldo_atual']:.2f}, Resultado do Dia R$ {financeiro['resultado_dia']:.2f}. "
+        f"Posições Abertas: {len(posicoes_abertas)}. "
+        f"Pergunta do usuário: {user_msg}"
+    )
+    
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         res = model.generate_content(prompt)
         return jsonify({"resposta": res.text})
-    except: return jsonify({"resposta": "Erro Gemini 2.5."})
+    except Exception as e:
+        return jsonify({"resposta": f"Erro na Jurity 2.5: {str(e)}"})
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
