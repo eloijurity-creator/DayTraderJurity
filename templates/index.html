@@ -3,127 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jurity IA - Trading Dashboard</title>
+    <title>JURITY IA - Terminal de Trading B3</title>
     <style>
-        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        
+        :root {
+            --bg: #0b0e11;
+            --card: #1e2329;
+            --yellow: #f0b90b;
+            --green: #00ff88;
+            --red: #ff3b3b;
+            --text: #eaeaea;
+            --gray: #848e9c;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px;
+        }
+
         /* Cabeçalho */
-        .header { text-align: center; margin-bottom: 20px; }
-        .header img { max-width: 200px; border-radius: 10px; }
-        .header h1 { margin: 10px 0 0 0; font-size: 28px; }
-        .header p { color: #888; margin: 5px 0; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: var(--yellow); margin: 0; font-size: 32px; letter-spacing: 2px; }
+        .header p { color: var(--gray); margin: 5px 0; font-size: 14px; }
 
-        /* Container dos Cards de Ativos */
-        .assets-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; width: 100%; max-width: 800px; }
-        
-        .card { background: #1e2329; border-radius: 15px; padding: 20px; width: 340px; border: 1px solid #333; text-align: center; transition: 0.3s; }
-        .status { color: #00ff88; font-weight: bold; font-size: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        
-        /* Estilo dos Preços */
-        .price-box { font-size: 32px; font-weight: bold; font-family: 'Courier New', monospace; margin: 10px 0; color: #f0b90b; }
-        .signal-box { background: #2b3139; padding: 12px; border-radius: 10px; margin-top: 10px; font-size: 14px; border-left: 5px solid #555; }
+        /* Container de Ativos */
+        .assets-container { 
+            display: flex; 
+            gap: 20px; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            width: 100%; 
+            max-width: 800px; 
+            margin-bottom: 25px;
+        }
 
-        /* Chat */
-        .chat-card { background: #1e2329; border-radius: 15px; padding: 20px; width: 100%; max-width: 710px; border: 1px solid #333; }
-        #chat-window { height: 250px; overflow-y: auto; background: #0b0e11; padding: 15px; border-radius: 10px; text-align: left; font-size: 14px; border: 1px solid #2b3139; }
-        .input-group { display: flex; gap: 10px; margin-top: 15px; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0b0e11; color: white; outline: none; }
-        .btn-send { background: #f0b90b; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        .online-dot { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff88; }
+        .card { 
+            background: var(--card); 
+            border-radius: 12px; 
+            padding: 20px; 
+            width: 320px; 
+            border: 1px solid #333; 
+            text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .asset-label { font-size: 12px; color: var(--gray); font-weight: bold; margin-bottom: 10px; }
+        .price-display { 
+            font-size: 36px; 
+            font-weight: 800; 
+            font-family: 'Courier New', monospace; 
+            margin: 10px 0; 
+            transition: color 0.3s ease;
+        }
+
+        .signal-indicator { 
+            font-size: 13px; 
+            padding: 8px; 
+            background: rgba(0,0,0,0.2); 
+            border-radius: 6px; 
+            margin-top: 10px;
+            border-left: 4px solid #555;
+        }
+
+        /* Seção do Chat */
+        .chat-section { 
+            width: 100%; 
+            max-width: 710px; 
+            background: var(--card); 
+            padding: 20px; 
+            border-radius: 15px; 
+            border: 1px solid #333;
+            margin-bottom: 25px;
+        }
+
+        #chat-window { 
+            height: 220px; 
+            overflow-y: auto; 
+            background: var(--bg); 
+            padding: 15px; 
+            border-radius: 10px; 
+            border: 1px solid #2b3139; 
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg { padding: 10px; border-radius: 8px; font-size: 14px; line-height: 1.4; max-width: 85%; }
+        .user-msg { align-self: flex-end; background: #2b3139; color: var(--yellow); border-bottom-right-radius: 2px; }
+        .jurity-msg { align-self: flex-start; background: #0c3d2e; color: white; border-bottom-left-radius: 2px; border-left: 3px solid var(--green); }
+
+        .input-group { display: flex; gap: 10px; }
+        input { 
+            flex: 1; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid #333; 
+            background: var(--bg); 
+            color: white; 
+            outline: none; 
+        }
+        input:focus { border-color: var(--yellow); }
+
+        .btn-send { 
+            background: var(--yellow); 
+            color: black; 
+            border: none; 
+            padding: 0 25px; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+
+        /* Tabela de Log */
+        .log-container { 
+            width: 100%; 
+            max-width: 750px; 
+            background: var(--card); 
+            border-radius: 12px; 
+            overflow: hidden; 
+            border: 1px solid #333;
+        }
+
+        .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .log-table th { background: #161a1e; color: var(--gray); padding: 12px; text-align: left; }
+        .log-table td { padding: 12px; border-bottom: 1px solid #2b3139; }
+
+        .online-status { font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 5px; color: var(--green); }
+        .dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 5px var(--green); }
+
+        /* Scrollbar Style */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Jurity IA">
-        <h1>JURITY IA</h1>
-        <p>Consultoria Técnica em Tempo Real</p>
+        <h1>JURITY IA 🦅</h1>
+        <p>Assistente de Risco & Alvos B3</p>
     </div>
 
     <div class="assets-container">
         <div class="card" id="card-win">
-            <div class="status"><span class="online-dot"></span> <span id="status-win">WIN - AGUARDANDO</span></div>
-            <div class="price-box" id="price-win">000.000</div>
-            <div id="signal-win" class="signal-box">Calculando RSI e Médias...</div>
+            <div class="asset-label">MINI ÍNDICE (WIN)</div>
+            <div class="online-status"><span class="dot"></span> <span id="status-win">LIVE</span></div>
+            <div id="price-win" class="price-display">000.000</div>
+            <div id="signal-win" class="signal-indicator">Aguardando dados...</div>
         </div>
 
         <div class="card" id="card-wdo">
-            <div class="status"><span class="online-dot"></span> <span id="status-wdo">WDO - AGUARDANDO</span></div>
-            <div class="price-box" id="price-wdo">0.000,00</div>
-            <div id="signal-wdo" class="signal-box">Analisando Volatilidade...</div>
+            <div class="asset-label">MINI DÓLAR (WDO)</div>
+            <div class="online-status"><span class="dot"></span> <span id="status-wdo">LIVE</span></div>
+            <div id="price-wdo" class="price-display">0.000,00</div>
+            <div id="signal-wdo" class="signal-indicator">Aguardando dados...</div>
         </div>
     </div>
 
-    <div class="chat-card">
-        <h3 style="margin-top: 0; color: #f0b90b;">ASSISTENTE JURITY IA 🤖</h3>
+    <div class="chat-section">
+        <h4 style="margin: 0 0 10px 0; color: var(--yellow);">CONSULTA TÉCNICA 🤖</h4>
         <div id="chat-window">
-            <p style="color: #888;">Analise enviada: Peça uma nota para operação ou análise de tendência.</p>
+            <div class="msg jurity-msg">Olá Trader! Digite sua dúvida ou peça um alvo para o WIN ou WDO.</div>
         </div>
         <div class="input-group">
-            <input type="text" id="user-input" placeholder="Ex: Devo entrar no WIN agora?">
-            <button class="btn-send" onclick="enviarPergunta()">></button>
+            <input type="text" id="userInput" placeholder="Ex: Qual o alvo para compra no índice?" autocomplete="off">
+            <button class="btn-send" onclick="enviarPergunta()">ENVIAR</button>
         </div>
     </div>
 
-<script>
-    let ultimosPrecos = { WIN: 0, WDO: 0 };
+    <div class="log-container">
+        <div style="padding: 15px; font-weight: bold; border-bottom: 1px solid #333; font-size: 14px; color: var(--green);">📊 LOG DE PERFORMANCE (SNAPSHOT 15 MIN)</div>
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th>HORA</th>
+                    <th>ATIVO</th>
+                    <th>PREÇO</th>
+                    <th>TENDÊNCIA</th>
+                    <th>RSI</th>
+                    <th>ALVO (PTS)</th>
+                </tr>
+            </thead>
+            <tbody id="log-body">
+                </tbody>
+        </table>
+    </div>
 
-    async function atualizarMercado() {
-        const ativos = ['WIN', 'WDO'];
-        
-        for (const ativo of ativos) {
+    <script>
+        let lastPrices = { WIN: 0, WDO: 0 };
+
+        // ATUALIZAÇÃO DE PREÇOS E SINAIS
+        async function updateDashboard() {
+            const assets = ['WIN', 'WDO'];
+            for (let ativo of assets) {
+                try {
+                    const response = await fetch(`/get_signal?ativo=${ativo}`);
+                    const data = await response.json();
+                    
+                    const elPrice = document.getElementById(`price-${ativo.toLowerCase()}`);
+                    const elSignal = document.getElementById(`signal-${ativo.toLowerCase()}`);
+                    const elStatus = document.getElementById(`status-${ativo.toLowerCase()}`);
+
+                    // Formatação e Cor do Preço
+                    const currentPrice = data.preco;
+                    elPrice.innerText = ativo === 'WIN' ? 
+                        currentPrice.toLocaleString('pt-BR') : 
+                        currentPrice.toFixed(2).replace('.', ',');
+
+                    if (currentPrice > lastPrices[ativo]) elPrice.style.color = "#00ff88";
+                    else if (currentPrice < lastPrices[ativo]) elPrice.style.color = "#ff3b3b";
+                    
+                    lastPrices[ativo] = currentPrice;
+
+                    // Sinal Visual
+                    elSignal.innerText = data.sinal;
+                    elSignal.style.borderLeft = `4px solid ${data.cor}`;
+                    elStatus.innerText = data.status;
+
+                } catch (e) { console.log("Erro ao atualizar " + ativo); }
+            }
+
+            // Atualiza Tabela de Log
             try {
-                const response = await fetch(`/get_signal?ativo=${ativo}`);
+                const logRes = await fetch('/get_log');
+                const logs = await logRes.json();
+                const logBody = document.getElementById('log-body');
+                logBody.innerHTML = logs.map(l => `
+                    <tr>
+                        <td style="color:var(--yellow)">${l.horario}</td>
+                        <td><b>${l.ativo}</b></td>
+                        <td>${l.preco}</td>
+                        <td style="color:${l.tendencia === 'ALTA' ? '#00ff88' : '#ff3b3b'}">${l.tendencia}</td>
+                        <td>${l.rsi}</td>
+                        <td>${l.alvo}</td>
+                    </tr>
+                `).join('');
+            } catch (e) { console.log("Erro no log"); }
+        }
+
+        // FUNÇÃO DE CHAT
+        async function enviarPergunta() {
+            const input = document.getElementById('userInput');
+            const chatWin = document.getElementById('chat-window');
+            const msg = input.value.trim();
+            
+            if (!msg) return;
+
+            // Interface
+            chatWin.innerHTML += `<div class="msg user-msg"><b>Você:</b> ${msg}</div>`;
+            input.value = '';
+            input.focus();
+            chatWin.scrollTop = chatWin.scrollHeight;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mensagem: msg })
+                });
                 const data = await response.json();
-                
-                // Atualiza Preço e Cor (Verde se sobe, Vermelho se cai)
-                const elPreco = document.getElementById(`price-${ativo.toLowerCase()}`);
-                const precoAtual = data.preco;
-                
-                elPreco.innerText = ativo === 'WIN' ? precoAtual.toLocaleString('pt-BR') : precoAtual.toFixed(2).replace('.', ',');
-                
-                if (precoAtual > ultimosPrecos[ativo]) elPreco.style.color = "#00ff88";
-                else if (precoAtual < ultimosPrecos[ativo]) elPreco.style.color = "#ff3b3b";
-                
-                ultimosPrecos[ativo] = precoAtual;
-
-                // Atualiza Box de Sinal
-                const elSignal = document.getElementById(`signal-${ativo.toLowerCase()}`);
-                elSignal.style.borderLeft = `5px solid ${data.cor}`;
-                elSignal.innerHTML = `<b style="color:${data.cor}">${data.sinal}</b><br>
-                                     <small>Status: ${data.status}</small>`;
-                
-                document.getElementById(`status-${ativo.toLowerCase()}`).innerText = `${ativo} - ${data.status}`;
-
+                chatWin.innerHTML += `<div class="msg jurity-msg"><b>Jurity IA:</b> ${data.resposta}</div>`;
+                chatWin.scrollTop = chatWin.scrollHeight;
             } catch (e) {
-                console.log("Erro na atualização de " + ativo);
+                chatWin.innerHTML += `<div class="msg" style="color:red">Erro de conexão com Jurity.</div>`;
             }
         }
-    }
 
-    async function enviarPergunta() {
-        const input = document.getElementById('user-input');
-        const chatWin = document.getElementById('chat-window');
-        const pergunta = input.value;
-        if(!pergunta) return;
-
-        chatWin.innerHTML += `<p style="color: #f0b90b; margin: 5px 0;"><b>Você:</b> ${pergunta}</p>`;
-        input.value = '';
-
-        const response = await fetch('/chat', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ mensagem: pergunta })
+        // ESCUTAR TECLA ENTER NO CHAT
+        document.getElementById('userInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                enviarPergunta();
+            }
         });
-        const data = await response.json();
-        chatWin.innerHTML += `<p style="color: #00ff88; margin: 10px 0; background: #161a1e; padding: 8px; border-radius: 5px;"><b>Jurity:</b> ${data.resposta}</p>`;
-        chatWin.scrollTop = chatWin.scrollHeight;
-    }
 
-    // Loop de atualização (1 segundo)
-    setInterval(atualizarMercado, 1000);
-</script>
-
+        // Intervalo Global (2 segundos)
+        setInterval(updateDashboard, 2000);
+        updateDashboard(); // Carga inicial
+    </script>
 </body>
 </html>
