@@ -3,78 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jurity IA - Clone</title>
+    <title>Jurity IA - Trading Dashboard</title>
     <style>
-        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .card { background: #1e2329; border-radius: 15px; padding: 25px; width: 350px; border: 1px solid #333; text-align: center; }
-        .status { color: #00ff88; font-weight: bold; margin-bottom: 20px; }
-        .signal-box { background: #2b3139; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #f0b90b; }
-        .buy { color: #00ff88; } .sell { color: #ff3b3b; }
-        button { background: #f0b90b; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
-        button:hover { background: #d9a508; }
+        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        
+        /* Cabeçalho */
+        .header { text-align: center; margin-bottom: 20px; }
+        .header img { max-width: 200px; border-radius: 10px; }
+        .header h1 { margin: 10px 0 0 0; font-size: 28px; }
+        .header p { color: #888; margin: 5px 0; }
+
+        /* Container dos Cards de Ativos */
+        .assets-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; width: 100%; max-width: 800px; }
+        
+        .card { background: #1e2329; border-radius: 15px; padding: 20px; width: 340px; border: 1px solid #333; text-align: center; transition: 0.3s; }
+        .status { color: #00ff88; font-weight: bold; font-size: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        
+        /* Estilo dos Preços */
+        .price-box { font-size: 32px; font-weight: bold; font-family: 'Courier New', monospace; margin: 10px 0; color: #f0b90b; }
+        .signal-box { background: #2b3139; padding: 12px; border-radius: 10px; margin-top: 10px; font-size: 14px; border-left: 5px solid #555; }
+
+        /* Chat */
+        .chat-card { background: #1e2329; border-radius: 15px; padding: 20px; width: 100%; max-width: 710px; border: 1px solid #333; }
+        #chat-window { height: 250px; overflow-y: auto; background: #0b0e11; padding: 15px; border-radius: 10px; text-align: left; font-size: 14px; border: 1px solid #2b3139; }
+        .input-group { display: flex; gap: 10px; margin-top: 15px; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0b0e11; color: white; outline: none; }
+        .btn-send { background: #f0b90b; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        .online-dot { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff88; }
     </style>
 </head>
 <body>
-    <div style="text-align: center; padding: 20px; background: #0b0e11;">
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="Jurity IA" style="max-width: 300px; border-radius: 10px;">
-    <h1 style="color: #ffffff; font-family: sans-serif; margin-top: 10px;">JURITY IA</h1>
-    <p style="color: #888;">Assistente Senior de Day Trade | B3</p>
-</div>
-    <div class="card">
-        <h2>Jurity IA 🦅</h2>
-        <div class="status">● CONECTADO À B3</div>
-        
-        <div id="signal-area">
-            <div class="signal-box">
-                <p>Aguardando Próxima Oportunidade...</p>
-            </div>
+
+    <div class="header">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Jurity IA">
+        <h1>JURITY IA</h1>
+        <p>Consultoria Técnica em Tempo Real</p>
+    </div>
+
+    <div class="assets-container">
+        <div class="card" id="card-win">
+            <div class="status"><span class="online-dot"></span> <span id="status-win">WIN - AGUARDANDO</span></div>
+            <div class="price-box" id="price-win">000.000</div>
+            <div id="signal-win" class="signal-box">Calculando RSI e Médias...</div>
         </div>
 
-        <button onclick="gerarSinal()">ANALISAR MERCADO AGORA</button>
+        <div class="card" id="card-wdo">
+            <div class="status"><span class="online-dot"></span> <span id="status-wdo">WDO - AGUARDANDO</span></div>
+            <div class="price-box" id="price-wdo">0.000,00</div>
+            <div id="signal-wdo" class="signal-box">Analisando Volatilidade...</div>
+        </div>
     </div>
-<div class="card" style="margin-top: 20px; width: 350px;">
-    <h3>ASSISTENTE Jurity IA 🤖</h3>
-    <div id="chat-window" style="height: 200px; overflow-y: auto; background: #0b0e11; padding: 10px; border-radius: 5px; text-align: left; font-size: 14px;">
-        <p style="color: #888;">Pergunte algo sobre o mercado...</p>
+
+    <div class="chat-card">
+        <h3 style="margin-top: 0; color: #f0b90b;">ASSISTENTE JURITY IA 🤖</h3>
+        <div id="chat-window">
+            <p style="color: #888;">Analise enviada: Peça uma nota para operação ou análise de tendência.</p>
+        </div>
+        <div class="input-group">
+            <input type="text" id="user-input" placeholder="Ex: Devo entrar no WIN agora?">
+            <button class="btn-send" onclick="enviarPergunta()">></button>
+        </div>
     </div>
-    <input type="text" id="user-input" placeholder="Ex: Tendência do WIN?" style="width: 80%; padding: 10px; margin-top: 10px; border-radius: 5px; border: none;">
-    <button onclick="enviarPergunta()" style="width: 15%; padding: 10px;">></button>
-</div>
 
 <script>
-async function enviarPergunta() {
-    const input = document.getElementById('user-input');
-    const chatWin = document.getElementById('chat-window');
-    const pergunta = input.value;
-    if(!pergunta) return;
+    let ultimosPrecos = { WIN: 0, WDO: 0 };
 
-    chatWin.innerHTML += `<p style="color: #f0b90b;"><b>Você:</b> ${pergunta}</p>`;
-    input.value = '';
+    async function atualizarMercado() {
+        const ativos = ['WIN', 'WDO'];
+        
+        for (const ativo of ativos) {
+            try {
+                const response = await fetch(`/get_signal?ativo=${ativo}`);
+                const data = await response.json();
+                
+                // Atualiza Preço e Cor (Verde se sobe, Vermelho se cai)
+                const elPreco = document.getElementById(`price-${ativo.toLowerCase()}`);
+                const precoAtual = data.preco;
+                
+                elPreco.innerText = ativo === 'WIN' ? precoAtual.toLocaleString('pt-BR') : precoAtual.toFixed(2).replace('.', ',');
+                
+                if (precoAtual > ultimosPrecos[ativo]) elPreco.style.color = "#00ff88";
+                else if (precoAtual < ultimosPrecos[ativo]) elPreco.style.color = "#ff3b3b";
+                
+                ultimosPrecos[ativo] = precoAtual;
 
-    const response = await fetch('/chat', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ mensagem: pergunta })
-    });
-    const data = await response.json();
-    chatWin.innerHTML += `<p style="color: #00ff88;"><b>Jurity:</b> ${data.resposta}</p>`;
-    chatWin.scrollTop = chatWin.scrollHeight;
-}
+                // Atualiza Box de Sinal
+                const elSignal = document.getElementById(`signal-${ativo.toLowerCase()}`);
+                elSignal.style.borderLeft = `5px solid ${data.cor}`;
+                elSignal.innerHTML = `<b style="color:${data.cor}">${data.sinal}</b><br>
+                                     <small>Status: ${data.status}</small>`;
+                
+                document.getElementById(`status-${ativo.toLowerCase()}`).innerText = `${ativo} - ${data.status}`;
+
+            } catch (e) {
+                console.log("Erro na atualização de " + ativo);
+            }
+        }
+    }
+
+    async function enviarPergunta() {
+        const input = document.getElementById('user-input');
+        const chatWin = document.getElementById('chat-window');
+        const pergunta = input.value;
+        if(!pergunta) return;
+
+        chatWin.innerHTML += `<p style="color: #f0b90b; margin: 5px 0;"><b>Você:</b> ${pergunta}</p>`;
+        input.value = '';
+
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ mensagem: pergunta })
+        });
+        const data = await response.json();
+        chatWin.innerHTML += `<p style="color: #00ff88; margin: 10px 0; background: #161a1e; padding: 8px; border-radius: 5px;"><b>Jurity:</b> ${data.resposta}</p>`;
+        chatWin.scrollTop = chatWin.scrollHeight;
+    }
+
+    // Loop de atualização (1 segundo)
+    setInterval(atualizarMercado, 1000);
 </script>
-    <script>
-        async function gerarSinal() {
-    const response = await fetch('/get_signal');
-    const data = await response.json();
-    
-    document.getElementById('signal-area').innerHTML = `
-        <div class="signal-box" style="border-left: 5px solid ${data.cor}">
-            <h3 style="color: ${data.cor}">${data.sinal}</h3>
-            <p>Ativo: <strong>${data.ativo}</strong></p>
-            <p>Preço: ${data.preco}</p>
-            <p>RSI: ${data.rsi}</p>
-        </div>
-    `;
-}
-    </script>
+
 </body>
 </html>
