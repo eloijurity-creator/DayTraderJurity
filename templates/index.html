@@ -2,153 +2,106 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA - Dashboard</title>
+    <title>Jurity IA 2.5 Flash</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: #0b0e11; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .status-bar { width: 850px; background: #1e2329; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid #333; margin-bottom: 15px; font-size: 14px; }
+        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .status-bar { width: 850px; background: #1e2329; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid #333; margin-bottom: 15px; }
         .card { background: #1e2329; padding: 20px; border-radius: 12px; border: 1px solid #333; width: 400px; text-align: center; }
-        .price { font-size: 42px; color: #f0b90b; font-weight: bold; margin: 10px 0; font-family: monospace; }
-        .sugestao { font-size: 18px; font-weight: bold; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; min-height: 25px; }
+        .price { font-size: 42px; color: #f0b90b; font-weight: bold; margin: 10px 0; }
+        .btn-ia { display: none; background: #f0b90b; color: black; border: none; padding: 15px; width: 100%; border-radius: 6px; font-weight: 800; cursor: pointer; margin-bottom: 10px; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.02); background: #fff;} 100% {transform: scale(1);} }
         .gain { color: #02c076; } .loss { color: #cf304a; }
-        .btn-buy { background: #02c076; color: white; border: none; padding: 15px; width: 48%; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-sell { background: #cf304a; color: white; border: none; padding: 15px; width: 48%; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        table { width: 850px; border-collapse: collapse; background: #1e2329; margin-top: 15px; font-size: 12px; border: 1px solid #333; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
-        .perf-box { width: 850px; display: flex; gap: 15px; height: 250px; margin-top: 20px; }
-        #chat-win { height: 120px; overflow-y: auto; background: #000; width: 830px; padding: 10px; border-radius: 8px; border: 1px solid #333; font-size: 13px; margin-top: 10px; }
+        table { width: 850px; border-collapse: collapse; background: #1e2329; margin-top: 15px; font-size: 12px; }
+        th, td { padding: 10px; border-bottom: 1px solid #333; text-align: left; }
     </style>
 </head>
 <body>
-    <h2 style="color:#f0b90b; margin-bottom: 5px;">JURITY IA 2.5 FLASH 🦅</h2>
+    <h2 style="color:#f0b90b">JURITY IA 2.5 FLASH 🦅 (SEMI-AUTO)</h2>
     
     <div class="status-bar">
         <span>CONTA: <b id="f-conta">--</b></span>
-        <span>EQUITY: <b id="f-saldo">R$ 0,00</b></span>
+        <span>PATRIMÔNIO: <b id="f-saldo">R$ 0,00</b></span>
         <span>HOJE: <b id="f-dia">R$ 0,00</b></span>
-        <span>ABERTO: <b id="f-aberto">R$ 0,00</b></span>
     </div>
 
     <div style="display:flex; gap:15px;">
         <div class="card">
-            <h3>WIN <span id="r-win" style="font-size:12px; opacity:0.6">RSI: --</span></h3>
-            <div id="sug-win" class="sugestao">ANALISANDO...</div>
+            <h3>MINI ÍNDICE <span id="r-win" style="font-size:12px; opacity:0.6">RSI: --</span></h3>
+            <button id="ia-btn-win" class="btn-ia" onclick="execIA('WIN')"></button>
             <div id="p-win" class="price">0</div>
             <div>TENDÊNCIA: <b id="t-win">--</b></div>
-            <div style="margin:10px 0">LOTES: <input type="number" id="l-win" value="1" style="width:40px; background:#000; color:#fff; border:1px solid #444"></div>
-            <button class="btn-buy" onclick="ordem('WIN','BUY')">COMPRAR</button>
-            <button class="btn-sell" onclick="ordem('WIN','SELL')">VENDER</button>
+            <div style="margin:10px 0">LOTES: <input type="number" id="l-win" value="1" style="width:40px; background:black; color:white;"></div>
+            <div style="display:flex; justify-content: space-between;">
+                <button style="background:#02c076; color:white; border:none; padding:10px; width:48%;" onclick="ordem('WIN','BUY')">COMPRAR</button>
+                <button style="background:#cf304a; color:white; border:none; padding:10px; width:48%;" onclick="ordem('WIN','SELL')">VENDER</button>
+            </div>
         </div>
-
         <div class="card">
-            <h3>WDO <span id="r-wdo" style="font-size:12px; opacity:0.6">RSI: --</span></h3>
-            <div id="sug-wdo" class="sugestao">ANALISANDO...</div>
+            <h3>MINI DÓLAR <span id="r-wdo" style="font-size:12px; opacity:0.6">RSI: --</span></h3>
+            <button id="ia-btn-wdo" class="btn-ia" onclick="execIA('WDO')"></button>
             <div id="p-wdo" class="price">0</div>
             <div>TENDÊNCIA: <b id="t-wdo">--</b></div>
-            <div style="margin:10px 0">LOTES: <input type="number" id="l-wdo" value="1" style="width:40px; background:#000; color:#fff; border:1px solid #444"></div>
-            <button class="btn-buy" onclick="ordem('WDO','BUY')">COMPRAR</button>
-            <button class="btn-sell" onclick="ordem('WDO','SELL')">VENDER</button>
+            <div style="margin:10px 0">LOTES: <input type="number" id="l-wdo" value="1" style="width:40px; background:black; color:white;"></div>
+            <div style="display:flex; justify-content: space-between;">
+                <button style="background:#02c076; color:white; border:none; padding:10px; width:48%;" onclick="ordem('WDO','BUY')">COMPRAR</button>
+                <button style="background:#cf304a; color:white; border:none; padding:10px; width:48%;" onclick="ordem('WDO','SELL')">VENDER</button>
+            </div>
         </div>
     </div>
 
-    <button onclick="ordem('ALL','PANIC')" style="width:850px; background:#ff3b3b; color:white; border:none; padding:15px; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:8px;">🚨 ZERAR TODAS AS POSIÇÕES (PANIC) 🚨</button>
+    <button onclick="ordem('ALL','PANIC')" style="width:850px; background:red; border:none; padding:15px; margin-top:10px; font-weight:bold; color:white; cursor:pointer;">🚨 ZERAR TUDO 🚨</button>
 
     <table>
         <thead><tr><th>ATIVO</th><th>LADO</th><th>VOL</th><th>PREÇO</th><th>LUCRO</th></tr></thead>
         <tbody id="t-posicoes"></tbody>
     </table>
 
-    <div class="perf-box">
-        <div style="flex:2; background:#1e2329; border:1px solid #333; padding:10px; border-radius:8px;"><canvas id="chart"></canvas></div>
-        <div style="flex:1; background:#1e2329; border:1px solid #333; padding:10px; border-radius:8px; overflow-y:auto; font-size:11px;" id="hist-list"></div>
-    </div>
-
-    <div id="chat-win"></div>
-    <input type="text" id="m-in" placeholder="Pergunte à Jurity 2.5 sobre o mercado..." style="width:830px; padding:15px; background:#1e2329; color:#fff; border:1px solid #444; border-radius:8px; margin-top:10px; outline: none;">
-
     <script>
-        const ctx = document.getElementById('chart').getContext('2d');
-        let chart = new Chart(ctx, { type:'line', data:{ labels:[], datasets:[{label:'Patrimônio', data:[], borderColor:'#f0b90b', fill:true, backgroundColor:'rgba(240,185,11,0.1)', tension:0.4, pointRadius: 0}] }, options:{ responsive: true, maintainAspectRatio: false, scales:{y:{grid:{color:'#333'}, ticks:{color:'#888'}}, x:{display:false}}, plugins:{legend:{display:false}} } });
-        
-        let ultimaSug = { win: "", wdo: "" };
-        function falar(txt) { const m = new SpeechSynthesisUtterance(txt); m.lang='pt-BR'; window.speechSynthesis.speak(m); }
+        let gatilhos = { WIN: null, WDO: null };
 
-        async function ordem(ativo, tipo) { 
-            const lotes = document.getElementById(`l-${ativo.toLowerCase()}`)?.value || 1;
-            await fetch('/set_order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ativo, tipo, lotes})}); 
+        async function ordem(ativo, tipo, lotes=null) {
+            const v = lotes || document.getElementById(`l-${ativo.toLowerCase()}`).value;
+            await fetch('/set_order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ativo, tipo, lotes:v})});
+        }
+
+        function execIA(ativo) {
+            if(gatilhos[ativo]) {
+                ordem(ativo, gatilhos[ativo].acao);
+                alert("Ordem Sugerida Enviada!");
+            }
         }
 
         async function update() {
-            try {
-                const res = await fetch('/get_signal'); 
-                const d = await res.json();
-                
-                // --- ATUALIZAÇÃO WIN ---
-                document.getElementById('p-win').innerText = d.win.preco;
-                document.getElementById('r-win').innerText = `RSI: ${d.win.rsi}`;
-                document.getElementById('t-win').innerText = d.win.tend;
-                document.getElementById('t-win').className = d.win.tend === 'ALTA' ? 'gain' : 'loss';
-                const sugWinEl = document.getElementById('sug-win');
-                sugWinEl.innerText = d.win.sug;
-                sugWinEl.className = 'sugestao ' + (d.win.sug.includes('COMPRA') ? 'gain' : d.win.sug.includes('VENDA') ? 'loss' : '');
+            const res = await fetch('/get_signal'); const d = await res.json();
+            
+            // Sync WIN
+            document.getElementById('p-win').innerText = d.win.preco;
+            document.getElementById('r-win').innerText = `RSI: ${d.win.rsi}`;
+            document.getElementById('t-win').innerText = d.win.tend;
+            const btnW = document.getElementById('ia-btn-win');
+            if(d.win.decisao) { 
+                btnW.style.display = 'block'; btnW.innerText = d.win.decisao.msg; 
+                gatilhos.WIN = d.win.decisao;
+            } else { btnW.style.display = 'none'; }
 
-                // --- ATUALIZAÇÃO WDO ---
-                document.getElementById('p-wdo').innerText = d.wdo.preco;
-                document.getElementById('r-wdo').innerText = `RSI: ${d.wdo.rsi}`;
-                document.getElementById('t-wdo').innerText = d.wdo.tend;
-                document.getElementById('t-wdo').className = d.wdo.tend === 'ALTA' ? 'gain' : 'loss';
-                const sugWdoEl = document.getElementById('sug-wdo');
-                sugWdoEl.innerText = d.wdo.sug;
-                sugWdoEl.className = 'sugestao ' + (d.wdo.sug.includes('COMPRA') ? 'gain' : d.wdo.sug.includes('VENDA') ? 'loss' : '');
+            // Sync WDO
+            document.getElementById('p-wdo').innerText = d.wdo.preco;
+            const btnD = document.getElementById('ia-btn-wdo');
+            if(d.wdo.decisao) { 
+                btnD.style.display = 'block'; btnD.innerText = d.wdo.decisao.msg; 
+                gatilhos.WDO = d.wdo.decisao;
+            } else { btnD.style.display = 'none'; }
 
-                // --- FINANCEIRO ---
-                document.getElementById('f-conta').innerText = d.fin.conta;
-                document.getElementById('f-saldo').innerText = `R$ ${d.fin.saldo_atual.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
-                document.getElementById('f-dia').innerText = `R$ ${d.fin.resultado_dia.toFixed(2)}`;
-                document.getElementById('f-dia').className = d.fin.resultado_dia >= 0 ? 'gain' : 'loss';
-                document.getElementById('f-aberto').innerText = `R$ ${d.fin.em_aberto.toFixed(2)}`;
-                document.getElementById('f-aberto').className = d.fin.em_aberto >= 0 ? 'gain' : 'loss';
-
-                // --- VOZ IA ---
-                if(d.win.sug.includes('FORTE') && d.win.sug !== ultimaSug.win) { falar("Índice: " + d.win.sug); ultimaSug.win = d.win.sug; }
-                if(d.wdo.sug.includes('FORTE') && d.wdo.sug !== ultimaSug.wdo) { falar("Dólar: " + d.wdo.sug); ultimaSug.wdo = d.wdo.sug; }
-
-                // --- TABELA DE POSIÇÕES ---
-                document.getElementById('t-posicoes').innerHTML = d.posicoes.map(p => `
-                    <tr>
-                        <td><b>${p.symbol}</b></td>
-                        <td class="${p.type==0?'gain':'loss'}">${p.type==0?'COMPRA':'VENDA'}</td>
-                        <td>${p.volume}</td>
-                        <td>${p.price_open}</td>
-                        <td class="${p.profit>=0?'gain':'loss'}">R$ ${p.profit.toFixed(2)}</td>
-                    </tr>
-                `).join('');
-
-                // --- GRÁFICO E HISTÓRICO ---
-                if (d.historico.length > 0) {
-                    chart.data.labels = d.historico.map(h => h.horario);
-                    chart.data.datasets[0].data = d.historico.map(h => h.acumulado);
-                    chart.update('none');
-                    document.getElementById('hist-list').innerHTML = d.historico.slice().reverse().slice(0, 8).map(h => `<div>${h.horario} - R$ ${h.acumulado.toFixed(2)}</div>`).join('');
-                }
-
-            } catch(e) { console.error("Update Error:", e); }
+            // Financeiro
+            document.getElementById('f-conta').innerText = d.fin.conta;
+            document.getElementById('f-saldo').innerText = `R$ ${d.fin.saldo_atual.toFixed(2)}`;
+            document.getElementById('f-dia').innerText = `R$ ${d.fin.resultado_dia.toFixed(2)}`;
+            
+            document.getElementById('t-posicoes').innerHTML = d.posicoes.map(p => `
+                <tr><td>${p.symbol}</td><td class="${p.type==0?'gain':'loss'}">${p.type==0?'COMPRA':'VENDA'}</td><td>${p.volume}</td><td>${p.price_open}</td><td class="${p.profit>=0?'gain':'loss'}">R$ ${p.profit.toFixed(2)}</td></tr>
+            `).join('');
         }
-
-        // --- CHAT IA 2.5 ---
-        document.getElementById('m-in').addEventListener('keypress', async (e) => {
-            if(e.key === 'Enter') {
-                const msg = e.target.value; e.target.value = '';
-                const chatWin = document.getElementById('chat-win');
-                chatWin.innerHTML += `<p><b>Você:</b> ${msg}</p>`;
-                chatWin.scrollTop = chatWin.scrollHeight;
-                const res = await fetch('/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mensagem:msg})});
-                const data = await res.json();
-                chatWin.innerHTML += `<p style="color:#00ff88"><b>Jurity 2.5:</b> ${data.resposta}</p>`;
-                chatWin.scrollTop = chatWin.scrollHeight;
-            }
-        });
-
         setInterval(update, 1000);
     </script>
 </body>
