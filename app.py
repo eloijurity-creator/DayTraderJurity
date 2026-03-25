@@ -12,23 +12,19 @@ GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY, transport='rest')
 
-# --- BANCA E RISCO ---
-BANCA_TOTAL = 1000.00
-RISCO_POR_TRADE = 0.05
-
 # --- VARIÁVEIS GLOBAIS ---
 historico_precos = {"WIN": [], "WDO": []}
-dados_reais = {"WIN": {"preco": 0, "status": "OFFLINE"}, "WDO": {"preco": 0, "status": "OFFLINE"}}
+dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
+financeiro = {"lucro_hoje": 0.0, "em_aberto": 0.0, "qtd_ordens": 0}
 log_performance = []
 proximo_snapshot = datetime.datetime.now()
-fila_ordens = {"WIN": None, "WDO": None} # FILA DE EXECUÇÃO
+fila_ordens = {"WIN": None, "WDO": None, "PANIC": False} # Fila de comandos
 
 def calcular_metricas(ativo):
     precos = historico_precos[ativo]
     if len(precos) < 50: return {"tendencia": "AGUARDANDO", "rsi": 50, "volat": 0}
     df = pd.DataFrame(precos, columns=['close'])
-    ma20 = df['close'].tail(20).mean()
-    ma50 = df['close'].tail(50).mean()
+    ma20, ma50 = df['close'].tail(20).mean(), df['close'].tail(50).mean()
     diff = (ma20 / ma50) - 1
     tendencia = "ALTA" if diff > 0.0006 else "BAIXA" if diff < -0.0006 else "LATERAL"
     delta = df['close'].diff()
@@ -42,39 +38,46 @@ def index(): return render_template('index.html')
 
 @app.route('/atualizar_dados', methods=['POST'])
 def atualizar():
-    global dados_reais, historico_precos
-    content = request.json
-    ativo = content.get('ativo')
+    global proximo_snapshot
+    data = request.json
+    ativo = data.get('ativo')
     if ativo in dados_reais:
-        preco = content.get('preco')
-        dados_reais[ativo].update({"preco": preco, "status": "CONECTADO"})
+        preco = data.get('preco')
+        dados_reais[ativo]["preco"] = preco
         historico_precos[ativo].append(preco)
         if len(historico_precos[ativo]) > 150: historico_precos[ativo].pop(0)
         
-        # Lógica de Snapshot 15min e Auditoria
-        global proximo_snapshot, log_performance
         agora = datetime.datetime.now()
         if agora >= proximo_snapshot:
             m = calcular_metricas(ativo)
-            for antigo in log_performance:
-                if antigo["ativo"] == ativo and antigo["resultado"] == "AGUARDANDO...":
-                    if antigo["tendencia"] == "ALTA": antigo["resultado"] = "✅ GAIN" if preco > antigo["preco"] else "❌ LOSS"
-                    elif antigo["tendencia"] == "BAIXA": antigo["resultado"] = "✅ GAIN" if preco < antigo["preco"] else "❌ LOSS"
-                    break
-            log_performance.insert(0, {"horario": agora.strftime("%H:%M"), "ativo": ativo, "preco": preco, "tendencia": m["tendencia"], "rsi": f"{m['rsi']:.1f}", "resultado": "AGUARDANDO..."})
+            for log in log_performance:
+                if log["ativo"] == ativo and log["resultado"] == "AGUARDANDO...":
+                    if log["tendencia"] == "ALTA": log["resultado"] = "✅ GAIN" if preco > log["preco"] else "❌ LOSS"
+                    elif log["tendencia"] == "BAIXA": log["resultado"] = "✅ GAIN" if preco < log["preco"] else "❌ LOSS"
+            log_performance.insert(0, {"horario": agora.strftime("%H:%M"), "ativo": ativo, "preco": preco, "tendencia": m["tendencia"], "resultado": "AGUARDANDO..."})
             proximo_snapshot = agora + datetime.timedelta(minutes=15)
+    return "OK"
+
+@app.route('/atualizar_financeiro', methods=['POST'])
+def atualizar_fin():
+    global financeiro
+    financeiro.update(request.json)
     return "OK"
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
     global fila_ordens
     data = request.json
-    fila_ordens[data['ativo']] = data
-    return jsonify({"status": "ORDEM ENVIADA AO MT5"})
+    if data.get('tipo') == 'PANIC': fila_ordens["PANIC"] = True
+    else: fila_ordens[data['ativo']] = data
+    return jsonify({"status": "COMANDO RECEBIDO"})
 
 @app.route('/get_orders')
 def get_orders():
     global fila_ordens
+    if fila_ordens["PANIC"]:
+        fila_ordens["PANIC"] = False
+        return jsonify({"tipo": "PANIC"})
     ativo = request.args.get('ativo')
     ordem = fila_ordens.get(ativo)
     fila_ordens[ativo] = None
@@ -84,16 +87,13 @@ def get_orders():
 def get_signal():
     ativo = request.args.get('ativo')
     m = calcular_metricas(ativo)
-    return jsonify({"preco": dados_reais[ativo]["preco"], "sinal": f"TENDÊNCIA: {m['tendencia']}", "rsi": f"{m['rsi']:.1f}", "volat": m['volat']})
-
-@app.route('/get_log')
-def get_log(): return jsonify(log_performance[:10])
+    return jsonify({"preco": dados_reais[ativo]["preco"], "rsi": f"{m['rsi']:.1f}", "tendencia": m['tendencia'], "fin": financeiro, "logs": log_performance[:5]})
 
 @app.route('/chat', methods=['POST'])
 def chat():
     user_msg = request.json.get('mensagem')
     model = genai.GenerativeModel('gemini-1.5-flash')
-    res = model.generate_content(f"Trader: {user_msg}. Analise Day Trade curta e técnica.")
+    res = model.generate_content(f"Trader: {user_msg}. Analise técnica curta.")
     return jsonify({"resposta": res.text})
 
 if __name__ == '__main__':
