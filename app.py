@@ -5,11 +5,19 @@ import random
 import os
 import google.generativeai as genai
 
+GEMINI_KEY = os.environ.get("GEMINI_KEY")
+
+if not GEMINI_KEY:
+    # Se o Render não passar a chave, tente usar a sua chave direta aqui para teste:
+    GEMINI_KEY = "AIzaSyAMg1aMjn3LMQAyUI2D2LP-If7hrIzALd4"
+
+genai.configure(api_key=GEMINI_KEY)
+
 app = Flask(__name__)
 
 # --- CONFIGURAÇÃO DA JURITY IA (GEMINI) ---
-GEMINI_KEY = os.environ.get("GEMINI_KEY")
-genai.configure(api_key=GEMINI_KEY)
+#GEMINI_KEY = os.environ.get("GEMINI_KEY")
+#genai.configure(api_key=GEMINI_KEY)
 
 # Usando o nome direto do modelo para evitar o erro 404
 model = genai.GenerativeModel('gemini-1.5-flash')
