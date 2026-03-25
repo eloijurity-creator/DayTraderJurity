@@ -7,43 +7,47 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO IA JURITY 2.5 ---
+# --- CONFIGURAÇÃO IA ---
 GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
-else:
-    print("AVISO: Chave GEMINI_KEY não encontrada nas variáveis de ambiente!")
 
-# --- VARIÁVEIS GLOBAIS ---
+# --- ESTADO DO SISTEMA ---
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
-financeiro = {
-    "resultado_dia": 0.0, 
-    "em_aberto": 0.0, 
-    "saldo_atual": 0.0, 
-    "conta": "Desconectado"
-}
+financeiro = {"resultado_dia": 0.0, "em_aberto": 0.0, "saldo_atual": 0.0, "conta": "Desconectado"}
 posicoes_abertas = [] 
 historico_performance = []
 fila_ordens = {"WIN": None, "WDO": None, "PANIC": False}
 
 def calcular_metricas(ativo):
     precos = historico_precos[ativo]
-    if len(precos) < 20: return {"tendencia": "LATERAL", "rsi": 50.0}
+    if len(precos) < 20: return {"tendencia": "LATERAL", "rsi": 50.0, "forca": 0}
+    
     df = pd.DataFrame(precos, columns=['close'])
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
     rs = gain / loss.replace(0, 0.001)
     rsi = 100 - (100 / (1 + rs.iloc[-1]))
+    
     ma10, ma30 = df['close'].tail(10).mean(), df['close'].tail(30).mean()
-    return {"tendencia": "ALTA" if ma10 > ma30 else "BAIXA", "rsi": rsi}
+    tendencia = "ALTA" if ma10 > ma30 else "BAIXA"
+    
+    # Cálculo de Confiança (0-100%)
+    forca = 0
+    if tendencia == "ALTA" and rsi < 40: forca = 70 + (40 - rsi)
+    if tendencia == "BAIXA" and rsi > 60: forca = 70 + (rsi - 60)
+    
+    return {"tendencia": tendencia, "rsi": rsi, "forca": min(int(forca), 100)}
 
-def gerar_sugestao(m):
-    rsi, tend = m['rsi'], m['tendencia']
-    if rsi < 30: return "FORTE COMPRA" if tend == "ALTA" else "COMPRA (EXAUSTÃO)"
-    if rsi > 70: return "FORTE VENDA" if tend == "BAIXA" else "VENDA (EXAUSTÃO)"
-    return "AGUARDAR" if 45 < rsi < 55 else "NEUTRO"
+def gerar_decisao_ia(m):
+    """Gera o gatilho para o botão One-Click"""
+    if m['forca'] >= 75:
+        acao = "BUY" if m['tendencia'] == "ALTA" else "SELL"
+        msg = f"IA: {m['forca']}% CONFIANÇA EM {acao}"
+        return {"acao": acao, "msg": msg, "confianca": m['forca']}
+    return None
 
 @app.route('/')
 def index(): return render_template('index.html')
@@ -53,9 +57,8 @@ def atualizar():
     data = request.json
     ativo = data.get('ativo')
     if ativo in dados_reais:
-        preco = data.get('preco')
-        dados_reais[ativo]["preco"] = preco
-        historico_precos[ativo].append(preco)
+        dados_reais[ativo]["preco"] = data.get('preco')
+        historico_precos[ativo].append(data.get('preco'))
         if len(historico_precos[ativo]) > 100: historico_precos[ativo].pop(0)
     return "OK"
 
@@ -63,16 +66,11 @@ def atualizar():
 def atualizar_fin():
     global financeiro, posicoes_abertas, historico_performance
     data = request.json
-    financeiro.update({
-        "resultado_dia": data.get('resultado_dia', 0.0),
-        "em_aberto": data.get('em_aberto', 0.0),
-        "saldo_atual": data.get('saldo_atual', 0.0),
-        "conta": data.get('conta', "Desconectado")
-    })
+    financeiro.update(data)
     posicoes_abertas = data.get('posicoes', [])
     agora = datetime.datetime.now().strftime("%H:%M:%S")
-    if not historico_performance or historico_performance[-1]["acumulado"] != financeiro["saldo_atual"]:
-        historico_performance.append({"horario": agora, "acumulado": financeiro["saldo_atual"]})
+    if not historico_performance or historico_performance[-1]["acumulado"] != data.get('saldo_atual'):
+        historico_performance.append({"horario": agora, "acumulado": data.get('saldo_atual')})
         if len(historico_performance) > 60: historico_performance.pop(0)
     return "OK"
 
@@ -80,34 +78,10 @@ def atualizar_fin():
 def get_signal():
     m_win, m_wdo = calcular_metricas("WIN"), calcular_metricas("WDO")
     return jsonify({
-        "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "sug": gerar_sugestao(m_win)},
-        "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "sug": gerar_sugestao(m_wdo)},
-        "fin": financeiro, 
-        "posicoes": posicoes_abertas, 
-        "historico": historico_performance
+        "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "decisao": gerar_decisao_ia(m_win)},
+        "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "decisao": gerar_decisao_ia(m_wdo)},
+        "fin": financeiro, "posicoes": posicoes_abertas, "historico": historico_performance
     })
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    user_msg = request.json.get('mensagem')
-    m_win, m_wdo = calcular_metricas("WIN"), calcular_metricas("WDO")
-    
-    # Prompt rico em contexto para a Gemini 2.5 Flash
-    prompt = (
-        f"Você é a Jurity IA 2.5 Flash, especialista em Day Trade. "
-        f"CONTEXTO ATUAL: WIN: {dados_reais['WIN']['preco']} (RSI {m_win['rsi']:.1f}, {m_win['tendencia']}), "
-        f"WDO: {dados_reais['WDO']['preco']} (RSI {m_wdo['rsi']:.1f}, {m_wdo['tendencia']}). "
-        f"FINANCEIRO: Saldo R$ {financeiro['saldo_atual']:.2f}, Resultado do Dia R$ {financeiro['resultado_dia']:.2f}. "
-        f"Posições Abertas: {len(posicoes_abertas)}. "
-        f"Pergunta do usuário: {user_msg}"
-    )
-    
-    try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        res = model.generate_content(prompt)
-        return jsonify({"resposta": res.text})
-    except Exception as e:
-        return jsonify({"resposta": f"Erro na Jurity 2.5: {str(e)}"})
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
@@ -123,9 +97,8 @@ def get_orders():
     if fila_ordens["PANIC"]:
         fila_ordens["PANIC"] = False
         return jsonify({"tipo": "PANIC"})
-    ativo = request.args.get('ativo')
-    ordem = fila_ordens.get(ativo)
-    fila_ordens[ativo] = None
+    ordem = fila_ordens.get(request.args.get('ativo'))
+    fila_ordens[request.args.get('ativo')] = None
     return jsonify(ordem)
 
 if __name__ == '__main__':
