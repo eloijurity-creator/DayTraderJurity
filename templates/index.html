@@ -1,206 +1,88 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JURITY IA - Terminal Day Trade B3</title>
+    <title>JURITY IA - DASHBOARD</title>
     <style>
-        :root {
-            --bg: #0b0e11;
-            --card: #1e2329;
-            --yellow: #f0b90b;
-            --green: #00ff88;
-            --red: #ff3b3b;
-            --text: #eaeaea;
-            --gray: #848e9c;
-        }
-
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        
-        /* Header & Timer */
-        .header { text-align: center; margin-bottom: 20px; }
-        .timer-banner { 
-            background: var(--yellow); color: black; padding: 10px 30px; border-radius: 5px; 
-            font-weight: bold; margin-bottom: 20px; display: none; box-shadow: 0 0 15px rgba(240, 185, 11, 0.4);
-        }
-
-        /* Cards de Ativos */
-        .assets-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
-        .card { 
-            background: var(--card); border-radius: 12px; padding: 20px; width: 300px; 
-            border: 1px solid #333; text-align: center; position: relative;
-        }
-        .price-display { font-size: 36px; font-weight: bold; margin: 10px 0; font-family: monospace; }
-        .btn-trade { 
-            background: transparent; border: 1px solid var(--gray); color: var(--gray); 
-            padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-size: 11px;
-        }
-        .btn-trade:hover { border-color: var(--yellow); color: var(--yellow); }
-
-        /* Chat */
-        .chat-section { width: 100%; max-width: 700px; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; }
-        #chat-window { height: 180px; overflow-y: auto; background: var(--bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .msg-u { align-self: flex-end; color: var(--yellow); font-size: 14px; }
-        .msg-j { align-self: flex-start; color: var(--green); background: rgba(0,255,136,0.05); padding: 8px; border-radius: 5px; font-size: 14px; }
-
-        /* Tabela de Log */
-        .log-container { width: 100%; max-width: 850px; margin-top: 30px; background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid #333; }
-        .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .log-table th { background: #161a1e; padding: 12px; text-align: left; color: var(--gray); }
-        .log-table td { padding: 12px; border-bottom: 1px solid #2b3139; }
-        
-        /* Status Colors */
-        .gain-cell { color: var(--green); font-weight: bold; background: rgba(0,255,136,0.1); }
-        .loss-cell { color: var(--red); font-weight: bold; background: rgba(255,59,59,0.1); }
-        .wait-cell { color: var(--gray); font-style: italic; }
+        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .card { background: #1e2329; padding: 20px; border-radius: 10px; width: 300px; text-align: center; border: 1px solid #333; }
+        .price { font-size: 38px; color: #f0b90b; font-family: monospace; }
+        .btn-buy { background: #00ff88; color: black; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; }
+        .btn-sell { background: #ff3b3b; color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; }
+        #chat { height: 150px; overflow-y: auto; background: #000; padding: 10px; margin: 10px 0; width: 600px; border: 1px solid #444; }
+        .gain { color: #00ff88; } .loss { color: #ff3b3b; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1 style="color: var(--yellow); margin:0;">JURITY IA 🦅</h1>
-        <p style="color: var(--gray);">Day Trade Monitor & Auditor</p>
-    </div>
-
-    <div id="op-timer" class="timer-banner">
-        ⏳ OPERAÇÃO EM CURSO: <span id="timer-val">20:00</span>
-    </div>
-
-    <div class="assets-container">
+    <h1>JURITY IA 🦅</h1>
+    <div style="display:flex; gap:20px;">
         <div class="card">
-            <div style="font-size: 12px; color: var(--gray);">MINI ÍNDICE (WIN)</div>
-            <div id="p-win" class="price-display">000.000</div>
-            <div id="s-win" style="font-size: 13px;">Aguardando...</div>
-            <button class="btn-trade" onclick="startTimer()">INICIAR TRADE 20 MIN</button>
+            <h3>WIN (ÍNDICE)</h3>
+            <div id="p-win" class="price">000.000</div>
+            <div id="s-win">Aguardando...</div>
+            <div style="margin-top:15px; display:flex; justify-content: space-between;">
+                <button class="btn-buy" onclick="enviarOrdem('WIN', 'BUY')">COMPRAR</button>
+                <button class="btn-sell" onclick="enviarOrdem('WIN', 'SELL')">VENDER</button>
+            </div>
         </div>
-
         <div class="card">
-            <div style="font-size: 12px; color: var(--gray);">MINI DÓLAR (WDO)</div>
-            <div id="p-wdo" class="price-display">0.000,00</div>
-            <div id="s-wdo" style="font-size: 13px;">Aguardando...</div>
-            <button class="btn-trade" onclick="startTimer()">INICIAR TRADE 20 MIN</button>
+            <h3>WDO (DÓLAR)</h3>
+            <div id="p-wdo" class="price">0.000,00</div>
+            <div id="s-wdo">Aguardando...</div>
+            <div style="margin-top:15px; display:flex; justify-content: space-between;">
+                <button class="btn-buy" onclick="enviarOrdem('WDO', 'BUY')">COMPRAR</button>
+                <button class="btn-sell" onclick="enviarOrdem('WDO', 'SELL')">VENDER</button>
+            </div>
         </div>
     </div>
 
-    <div class="chat-section">
-        <div id="chat-window">
-            <div class="msg-j">Jurity IA: Monitorando fluxo de 15 min. Como posso ajudar no seu Payoff hoje?</div>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="u-in" placeholder="Dúvida ou alvo? Aperte Enter" style="flex:1; padding:12px; background:var(--bg); border:1px solid #333; color:white; border-radius:5px; outline:none;">
-            <button onclick="ask()" style="background:var(--yellow); border:none; padding: 0 20px; border-radius:5px; font-weight:bold; cursor:pointer;">ENVIAR</button>
-        </div>
-    </div>
+    <div id="chat"></div>
+    <input type="text" id="msg-in" placeholder="Dúvida? Enter" style="width:620px; padding:10px; background:#1e2329; color:white; border:1px solid #444;">
 
-    <div class="log-container">
-        <div style="padding:15px; font-weight:bold; border-bottom:1px solid #333; color:var(--yellow);">📊 AUDITORIA DE PERFORMANCE (15 MIN)</div>
-        <table class="log-table">
-            <thead>
-                <tr>
-                    <th>HORA</th>
-                    <th>ATIVO</th>
-                    <th>ENTRADA</th>
-                    <th>TENDÊNCIA</th>
-                    <th>RSI</th>
-                    <th>ALVO (VOLAT.)</th>
-                    <th>RESULTADO</th>
-                </tr>
-            </thead>
-            <tbody id="l-body">
-                </tbody>
-        </table>
-    </div>
+    <table border="1" style="width:620px; margin-top:20px; border-collapse: collapse;">
+        <thead><tr><th>HORA</th><th>ATIVO</th><th>ENTRADA</th><th>TENDÊNCIA</th><th>RESULTADO 15M</th></tr></thead>
+        <tbody id="l-body"></tbody>
+    </table>
 
-<script>
-    let timerIdx;
-    let lastP = { WIN: 0, WDO: 0 };
-
-    // Timer de Operação
-    function startTimer() {
-        clearInterval(timerIdx);
-        let time = 1200; // 20 minutos
-        const display = document.getElementById('op-timer');
-        display.style.display = 'block';
-        
-        timerIdx = setInterval(() => {
-            let m = Math.floor(time / 60);
-            let s = time % 60;
-            document.getElementById('timer-val').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-            if (time <= 0) {
-                clearInterval(timerIdx);
-                display.style.display = 'none';
-                alert("Jurity IA: Tempo estimado da operação atingido. Verifique seus alvos!");
-            }
-            time--;
-        }, 1000);
-    }
-
-    // Atualização de Interface
-    async function refresh() {
-        // Preços e Sinais
-        for (let a of ['WIN', 'WDO']) {
-            try {
-                const r = await fetch(`/get_signal?ativo=${a}`);
-                const d = await r.json();
-                const elP = document.getElementById(`p-${a.toLowerCase()}`);
-                const elS = document.getElementById(`s-${a.toLowerCase()}`);
-                
-                elP.innerText = d.preco.toLocaleString('pt-BR');
-                elS.innerText = d.sinal;
-                elS.style.color = d.cor;
-
-                if(d.preco > lastP[a]) elP.style.color = "#00ff88";
-                else if(d.preco < lastP[a]) elP.style.color = "#ff3b3b";
-                lastP[a] = d.preco;
-            } catch(e) {}
+    <script>
+        async function enviarOrdem(ativo, tipo) {
+            const preco = parseFloat(document.getElementById(`p-${ativo.toLowerCase()}`).innerText.replace('.',''));
+            const offset = ativo === 'WIN' ? 150 : 5.0;
+            const payload = {
+                ativo: ativo, tipo: tipo, preco: preco,
+                sl: tipo === 'BUY' ? preco - offset : preco + offset,
+                tp: tipo === 'BUY' ? preco + offset : preco - offset,
+                lotes: 1
+            };
+            const res = await fetch('/set_order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+            alert("Ordem enviada para a fila do MT5!");
         }
 
-        // Tabela de Auditoria
-        try {
+        async function update() {
+            for (let a of ['WIN', 'WDO']) {
+                const r = await fetch(`/get_signal?ativo=${a}`);
+                const d = await r.json();
+                document.getElementById(`p-${a.toLowerCase()}`).innerText = d.preco;
+                document.getElementById(`s-${a.toLowerCase()}`).innerText = `${d.sinal} | RSI: ${d.rsi}`;
+            }
             const rl = await fetch('/get_log');
             const logs = await rl.json();
-            document.getElementById('l-body').innerHTML = logs.map(l => {
-                let resClass = l.resultado.includes('GAIN') ? 'gain-cell' : 
-                               l.resultado.includes('LOSS') ? 'loss-cell' : 'wait-cell';
-                return `
-                    <tr>
-                        <td style="color:var(--gray)">${l.horario}</td>
-                        <td><b>${l.ativo}</b></td>
-                        <td>${l.preco}</td>
-                        <td style="color:${l.tendencia=='ALTA'?'#00ff88':'#ff3b3b'}">${l.tendencia}</td>
-                        <td>${l.rsi}</td>
-                        <td>${l.alvo}</td>
-                        <td class="${resClass}">${l.resultado}</td>
-                    </tr>
-                `;
-            }).join('');
-        } catch(e) {}
-    }
+            document.getElementById('l-body').innerHTML = logs.map(l => `
+                <tr><td>${l.horario}</td><td>${l.ativo}</td><td>${l.preco}</td><td>${l.tendencia}</td><td class="${l.resultado.includes('GAIN')?'gain':'loss'}">${l.resultado}</td></tr>
+            `).join('');
+        }
 
-    // Chat
-    async function ask() {
-        const input = document.getElementById('u-in');
-        const box = document.getElementById('chat-window');
-        const txt = input.value.trim();
-        if(!txt) return;
-
-        box.innerHTML += `<div class="msg-u"><b>Você:</b> ${txt}</div>`;
-        input.value = '';
-        box.scrollTop = box.scrollHeight;
-
-        const res = await fetch('/chat', {
-            method:'POST', 
-            headers:{'Content-Type':'application/json'}, 
-            body: JSON.stringify({mensagem: txt})
+        document.getElementById('msg-in').addEventListener('keypress', async (e) => {
+            if(e.key === 'Enter') {
+                const val = e.target.value; e.target.value = '';
+                document.getElementById('chat').innerHTML += `<p style="color:#f0b90b">Você: ${val}</p>`;
+                const res = await fetch('/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mensagem:val})});
+                const d = await res.json();
+                document.getElementById('chat').innerHTML += `<p style="color:#00ff88">Jurity: ${d.resposta}</p>`;
+            }
         });
-        const d = await res.json();
-        box.innerHTML += `<div class="msg-j"><b>Jurity IA:</b> ${d.resposta}</div>`;
-        box.scrollTop = box.scrollHeight;
-    }
 
-    document.getElementById('u-in').addEventListener('keypress', (e) => { if(e.key==='Enter') ask(); });
-    setInterval(refresh, 2500);
-    refresh();
-</script>
+        setInterval(update, 2000);
+    </script>
 </body>
 </html>
