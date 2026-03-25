@@ -2,69 +2,61 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA - Trading Dashboard</title>
+    <title>Jurity IA - Trading Pro</title>
     <style>
         body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .card { background: #1e2329; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; width: 280px; }
         .price { font-size: 32px; color: #f0b90b; font-weight: bold; margin: 10px 0; }
         .btn-buy { background: #02c076; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; border-radius: 4px; color: white; }
         .btn-sell { background: #cf304a; color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; border-radius: 4px; }
-        .status-bar { width: 700px; background: #2b3139; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 13px; border: 1px solid #444; }
-        table { width: 700px; border-collapse: collapse; margin-top: 15px; font-size: 12px; background: #1e2329; border-radius: 8px; overflow: hidden; }
+        .status-bar { width: 720px; background: #2b3139; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 13px; border: 1px solid #444; }
+        table { width: 720px; border-collapse: collapse; margin-top: 15px; font-size: 12px; background: #1e2329; border-radius: 8px; overflow: hidden; }
         th { background: #2b3139; color: #848e9c; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #333; text-align: left; }
-        .btn-panic { background: #ff3b3b; color: white; border: none; padding: 12px; width: 700px; margin-top: 10px; font-weight: bold; cursor: pointer; border-radius: 8px; }
-        #chat-win { height: 100px; overflow-y: auto; background: #000; width: 680px; padding: 10px; margin-top: 10px; border-radius: 8px; font-size: 12px; border: 1px solid #333; }
+        td { padding: 12px; border-bottom: 1px solid #333; }
+        .btn-panic { background: #ff3b3b; color: white; border: none; padding: 12px; width: 720px; margin-top: 10px; font-weight: bold; cursor: pointer; border-radius: 8px; }
+        #chat-win { height: 100px; overflow-y: auto; background: #000; width: 700px; padding: 10px; margin-top: 10px; border-radius: 8px; font-size: 12px; border: 1px solid #333; }
         .gain { color: #02c076; } .loss { color: #cf304a; }
         input[type="number"] { background: #0b0e11; border: 1px solid #444; color: white; padding: 4px; border-radius: 4px; width: 50px; text-align: center; }
+        .trailing-badge { font-size: 9px; background: #f0b90b; color: black; padding: 2px 4px; border-radius: 3px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2 style="color:#f0b90b">JURITY IA 🦅</h2>
+    <h2 style="color:#f0b90b">JURITY IA 🦅 <small style="font-size: 10px; color: white; background: #444; padding: 3px; border-radius: 4px;">TRAILING STOP ATIVO</small></h2>
     
     <div class="status-bar">
         <span>CONTA: <b id="fin-conta">...</b></span>
-        <span>LUCRO HOJE: <b id="fin-hoje">R$ 0,00</b></span>
-        <span>EM ABERTO: <b id="fin-aberto">R$ 0,00</b></span>
+        <span>HOJE: <b id="fin-hoje">R$ 0,00</b></span>
+        <span>ABERTO: <b id="fin-aberto">R$ 0,00</b></span>
     </div>
 
     <div style="display:flex; gap:15px; margin-bottom: 10px;">
         <div class="card">
             <h3>WIN (ÍNDICE)</h3>
             <div id="p-win" class="price">0</div>
-            <div style="margin-bottom:10px;">CONTRATOS: <input type="number" id="lote-win" value="1"></div>
+            <div style="margin-bottom:10px;">LOTES: <input type="number" id="lote-win" value="1"></div>
             <button class="btn-buy" onclick="ordem('WIN','BUY')">COMPRAR</button>
             <button class="btn-sell" onclick="ordem('WIN','SELL')">VENDER</button>
         </div>
         <div class="card">
             <h3>WDO (DÓLAR)</h3>
             <div id="p-wdo" class="price">0</div>
-            <div style="margin-bottom:10px;">CONTRATOS: <input type="number" id="lote-wdo" value="1"></div>
+            <div style="margin-bottom:10px;">LOTES: <input type="number" id="lote-wdo" value="1"></div>
             <button class="btn-buy" onclick="ordem('WDO','BUY')">COMPRAR</button>
             <button class="btn-sell" onclick="ordem('WDO','SELL')">VENDER</button>
         </div>
     </div>
 
-    <button class="btn-panic" onclick="ordem('ALL','PANIC')">🚨 BOTÃO DE PÂNICO: ZERAR TUDO 🚨</button>
+    <button class="btn-panic" onclick="ordem('ALL','PANIC')">🚨 ZERAR TODA A CONTA (PANIC) 🚨</button>
 
-    <h4 style="margin: 20px 0 5px 0; color: #848e9c; align-self: flex-start; width: 700px;">POSIÇÕES EM ABERTO</h4>
     <table>
         <thead>
-            <tr>
-                <th>ATIVO</th>
-                <th>TIPO</th>
-                <th>LOTES</th>
-                <th>ENTRADA</th>
-                <th style="color: #ff3b3b;">S.L.</th>
-                <th style="color: #02c076;">T.P.</th>
-                <th>LUCRO</th>
-            </tr>
+            <tr><th>ATIVO</th><th>TIPO</th><th>LOTES</th><th>ENTRADA</th><th>S.L. <span class="trailing-badge">TS</span></th><th>T.P.</th><th>LUCRO</th></tr>
         </thead>
         <tbody id="t-aberto"></tbody>
     </table>
 
     <div id="chat-win"></div>
-    <input type="text" id="msg-in" placeholder="Perguntar à IA..." style="width:680px; padding:12px; margin-top:5px; background:#1e2329; color:white; border:1px solid #444; border-radius: 8px;">
+    <input type="text" id="msg-in" placeholder="Análise técnica da Jurity IA..." style="width:700px; padding:12px; margin-top:5px; background:#1e2329; color:white; border:1px solid #444; border-radius: 8px;">
 
     <script>
         async function ordem(ativo, tipo) {
