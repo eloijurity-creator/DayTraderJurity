@@ -6,12 +6,10 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO IA ---
 GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY, transport='rest')
 
-# --- VARIÁVEIS GLOBAIS ---
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
 financeiro = {"lucro_hoje": 0.0, "em_aberto": 0.0, "qtd_ordens": 0, "conta": "Desconectado"}
@@ -47,11 +45,7 @@ def atualizar_fin():
 @app.route('/get_signal')
 def get_signal():
     ativo = request.args.get('ativo')
-    return jsonify({
-        "preco": dados_reais[ativo]["preco"], 
-        "fin": financeiro, 
-        "posicoes": posicoes_abertas
-    })
+    return jsonify({"preco": dados_reais[ativo]["preco"], "fin": financeiro, "posicoes": posicoes_abertas})
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
@@ -77,9 +71,9 @@ def chat():
     user_msg = request.json.get('mensagem')
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
-        res = model.generate_content(f"Trader pergunta: {user_msg}. Responda de forma curta e técnica.")
+        res = model.generate_content(f"Trader: {user_msg}. Contexto: WIN={dados_reais['WIN']['preco']}, WDO={dados_reais['WDO']['preco']}. Curto e técnico.")
         return jsonify({"resposta": res.text})
-    except: return jsonify({"resposta": "IA Indisponível."})
+    except: return jsonify({"resposta": "IA Offline."})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
