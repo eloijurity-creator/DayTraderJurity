@@ -15,18 +15,8 @@ if GEMINI_KEY:
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
 financeiro = {"lucro_hoje": 0.0, "em_aberto": 0.0, "qtd_ordens": 0, "conta": "Desconectado"}
-posicoes_abertas = [] # NOVA LISTA DETALHADA
-log_performance = []
-proximo_snapshot = datetime.datetime.now()
+posicoes_abertas = [] 
 fila_ordens = {"WIN": None, "WDO": None, "PANIC": False}
-
-def calcular_metricas(ativo):
-    precos = historico_precos[ativo]
-    if len(precos) < 50: return {"tendencia": "AGUARDANDO", "rsi": 50}
-    df = pd.DataFrame(precos, columns=['close'])
-    ma20, ma50 = df['close'].tail(20).mean(), df['close'].tail(50).mean()
-    rsi = 50 # Simplificado para performance
-    return {"tendencia": "ALTA" if ma20 > ma50 else "BAIXA", "rsi": rsi}
 
 @app.route('/')
 def index(): return render_template('index.html')
@@ -38,7 +28,7 @@ def atualizar():
     if ativo in dados_reais:
         dados_reais[ativo]["preco"] = data.get('preco')
         historico_precos[ativo].append(data.get('preco'))
-        if len(historico_precos[ativo]) > 150: historico_precos[ativo].pop(0)
+        if len(historico_precos[ativo]) > 100: historico_precos[ativo].pop(0)
     return "OK"
 
 @app.route('/atualizar_financeiro', methods=['POST'])
@@ -51,19 +41,16 @@ def atualizar_fin():
         "conta": data.get('conta'),
         "qtd_ordens": data.get('qtd_ordens')
     })
-    posicoes_abertas = data.get('posicoes', []) # Recebe a lista do MT5
+    posicoes_abertas = data.get('posicoes', [])
     return "OK"
 
 @app.route('/get_signal')
 def get_signal():
     ativo = request.args.get('ativo')
-    m = calcular_metricas(ativo)
     return jsonify({
         "preco": dados_reais[ativo]["preco"], 
         "fin": financeiro, 
-        "posicoes": posicoes_abertas,
-        "rsi": f"{m['rsi']:.1f}",
-        "tendencia": m['tendencia']
+        "posicoes": posicoes_abertas
     })
 
 @app.route('/set_order', methods=['POST'])
@@ -90,7 +77,7 @@ def chat():
     user_msg = request.json.get('mensagem')
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
-        res = model.generate_content(f"Trader pergunta: {user_msg}. Responda de forma curta.")
+        res = model.generate_content(f"Trader pergunta: {user_msg}. Responda de forma curta e técnica.")
         return jsonify({"resposta": res.text})
     except: return jsonify({"resposta": "IA Indisponível."})
 
