@@ -104,14 +104,18 @@ def chat():
     2. Alinhamento com a tendência das médias.
     Responda de forma ultra-curta e profissional.
     """
+    # Lista de modelos para tentar (do mais novo para o mais estável)
+    modelos_para_tentar = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-pro']
     
-    try:
-        # Usando o modelo Pro que é o mais estável para evitar o 404
-        model = genai.GenerativeModel('gemini-1.0-pro')
-        response = model.generate_content(prompt)
-        return jsonify({"resposta": response.text})
-    except Exception as e:
-        return jsonify({"resposta": f"Jurity Offline: {str(e)}"})
+    for nome_modelo in modelos_para_tentar:
+        try:
+            model = genai.GenerativeModel(nome_modelo)
+            response = model.generate_content(prompt)
+            return jsonify({"resposta": response.text})
+        except Exception:
+            continue # Tenta o próximo modelo da lista se o atual der erro 404
+            
+    return jsonify({"resposta": "Jurity está processando dados. Tente novamente em instantes."})
 
 # --- INICIALIZAÇÃO ---
 if __name__ == '__main__':
