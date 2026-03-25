@@ -76,17 +76,22 @@ def chat():
     user_msg = request.json.get('mensagem')
     preco_atual = dados_reais.get("preco", "aguardando dados")
     
+    # Prompt da Jurity
     prompt = f"Você é a Jurity IA. Preço: {preco_atual}. Pergunta: {user_msg}"
     
     try:
-        # Tentativa com o modelo padrão
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Tentamos o modelo Flash (o mais rápido)
+        model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content(prompt)
         return jsonify({"resposta": response.text})
     except Exception as e:
-        # SE DER ERRO, ELE VAI MOSTRAR O QUE É (Ex: API_KEY_INVALID ou REGION_NOT_SUPPORTED)
-        erro_msg = str(e)
-        return jsonify({"resposta": f"Erro detectado: {erro_msg}"})
+        try:
+            # SE O FLASH DER 404, O PRO NUNCA FALHA:
+            model_pro = genai.GenerativeModel('gemini-1.0-pro')
+            response = model_pro.generate_content(prompt)
+            return jsonify({"resposta": response.text})
+        except Exception as e2:
+            return jsonify({"resposta": f"Erro Final: {str(e2)}"})
 # --- INICIALIZAÇÃO COM INDENTAÇÃO CORRETA ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
