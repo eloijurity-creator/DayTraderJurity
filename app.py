@@ -63,9 +63,11 @@ def atualizar_fin():
 def set_order():
     global fila_ordens
     data = request.json
-    if data.get('tipo') == 'PANIC': fila_ordens["PANIC"] = True
-    else: fila_ordens[data['ativo']] = data
-    return jsonify({"status": "ORDEM ENVIADA"})
+    if data.get('tipo') == 'PANIC': 
+        fila_ordens["PANIC"] = True
+    else: 
+        fila_ordens[data['ativo']] = data
+    return jsonify({"status": "COMANDO RECEBIDO"})
 
 @app.route('/get_orders')
 def get_orders():
@@ -83,16 +85,6 @@ def get_signal():
     ativo = request.args.get('ativo')
     m = calcular_metricas(ativo)
     return jsonify({"preco": dados_reais[ativo]["preco"], "rsi": f"{m['rsi']:.1f}", "tendencia": m['tendencia'], "fin": financeiro, "logs": log_performance[:5]})
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    user_msg = request.json.get('mensagem')
-    try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        res = model.generate_content(f"Trader: {user_msg}. Seja técnico e curto.")
-        return jsonify({"resposta": res.text})
-    except:
-        return jsonify({"resposta": "IA offline."})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
