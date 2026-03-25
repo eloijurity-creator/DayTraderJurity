@@ -2,74 +2,156 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jurity IA - Trading Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: #0b0e11; color: white; font-family: sans-serif; padding: 20px; }
-        .card { background: #1e2329; border: 1px solid #333; border-radius: 10px; padding: 15px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
-        .btn-fechar { background: #ff4d4d; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; --text: #eaeaea; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        .header { text-align: center; margin-bottom: 20px; width: 100%; }
+        .header h1 { margin: 0; font-size: 32px; color: var(--yellow); }
+        .header p { color: #888; margin: 5px 0; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
+        
+        .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); transition: 0.3s; }
+        .card:hover { border-color: var(--yellow); }
+
+        /* Gráfico */
+        .chart-container { grid-column: span 2; min-height: 300px; }
+
+        /* Tabela de Ordens */
+        .orders-container { grid-column: span 2; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; color: #888; padding: 12px; border-bottom: 1px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid #222; }
+
+        /* Chat */
+        .chat-container { background: #1e2329; border-radius: 15px; padding: 20px; border: 1px solid var(--border); width: 100%; max-width: 1200px; margin-top: 20px; }
+        #chat-window { height: 150px; overflow-y: auto; background: #0b0e11; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 10px; }
+
+        .btn-fechar { background: var(--red); color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-panic { background: var(--red); color: white; border: none; padding: 10px 20px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        input { background: #0b0e11; border: 1px solid #333; color: white; padding: 10px; border-radius: 5px; width: calc(100% - 110px); }
+        button#send-chat { background: var(--yellow); border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h2>Jurity IA | Conta: <span id="conta-id">---</span></h2>
-    
-    <div class="card">
-        <canvas id="perfChart" height="80"></canvas>
+
+    <div class="header">
+        <h1>Jurity <span style="color:white">IA</span></h1>
+        <p>Conta: <span id="conta-id" style="color:var(--yellow)">Conectando...</span> | Equity: <span id="saldo-atual" style="color:var(--green)">R$ 0.00</span></p>
     </div>
 
-    <div class="card">
-        <h3>Ordens em Aberto</h3>
-        <table>
-            <thead>
-                <tr><th>Ativo</th><th>Lado</th><th>SL</th><th>TP</th><th>Dist. SL</th><th>Lucro</th><th>Ação</th></tr>
-            </thead>
-            <tbody id="tabela-ordens"></tbody>
-        </table>
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3><i class="fas fa-chart-line"></i> Mini Índice (WIN)</h3>
+            <h2 id="preco-win" style="font-size: 36px;">---</h2>
+            <div id="status-win" class="status">Offline</div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-chart-line"></i> Mini Dólar (WDO)</h3>
+            <h2 id="preco-wdo" style="font-size: 36px;">---</h2>
+            <div id="status-wdo" class="status">Offline</div>
+        </div>
+
+        <div class="card chart-container">
+            <h3><i class="fas fa-history"></i> Curva de Equity</h3>
+            <canvas id="perfChart"></canvas>
+        </div>
+
+        <div class="card orders-container">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3><i class="fas fa-list"></i> Ordens em Aberto</h3>
+                <button class="btn-panic" style="width: auto;" onclick="enviarOrdem('PANIC', 0)">FECHAR TUDO (PÂNICO)</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ativo</th><th>Lado</th><th>Stop Loss</th><th>Take Profit</th><th>Dist. SL</th><th>Lucro</th><th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-ordens"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <h3><i class="fas fa-robot"></i> Jurity IA Analista</h3>
+        <div id="chat-window"></div>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="user-input" placeholder="Pergunte sobre o mercado...">
+            <button id="send-chat" onclick="enviarPergunta()">Enviar</button>
+        </div>
     </div>
 
     <script>
+        // Configuração do Gráfico
         const ctx = document.getElementById('perfChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [{ label: 'Saldo (R$)', data: [], borderColor: '#f0b90b', fill: false }] }
+            data: { labels: [], datasets: [{ label: 'Saldo R$', data: [], borderColor: '#f0b90b', tension: 0.3, fill: false }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { grid: { color: '#222' } } } }
         });
 
-        async function update() {
-            const res = await fetch('/get_financeiro');
-            const data = await res.json();
-            document.getElementById('conta-id').innerText = data.conta;
+        // Atualização Geral
+        async function updateDashboard() {
+            try {
+                // Atualiza Preços WIN/WDO
+                const resWin = await fetch('/get_signal?ativo=WIN');
+                const dataWin = await resWin.json();
+                document.getElementById('preco-win').innerText = dataWin.preco || '---';
+                document.getElementById('status-win').innerText = dataWin.status;
 
-            let html = '';
-            data.posicoes.forEach(p => {
-                html += `<tr>
-                    <td>${p.ativo}</td>
-                    <td style="color:${p.tipo=='COMPRA'?'#0f8':'#f44'}">${p.tipo}</td>
-                    <td>${p.sl}</td><td>${p.tp}</td>
-                    <td>${p.dist_sl} pts</td>
-                    <td>R$ ${p.lucro}</td>
-                    <td><button class="btn-fechar" onclick="fechar(${p.ticket})">Fechar</button></td>
-                </tr>`;
-            });
-            document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="7">Nenhuma ordem</td></tr>';
+                const resWdo = await fetch('/get_signal?ativo=WDO');
+                const dataWdo = await resWdo.json();
+                document.getElementById('preco-wdo').innerText = dataWdo.preco || '---';
+                document.getElementById('status-wdo').innerText = dataWdo.status;
+
+                // Atualiza Financeiro e Tabela
+                const resFin = await fetch('/get_financeiro');
+                const fin = await resFin.json();
+                document.getElementById('saldo-atual').innerText = `R$ ${fin.saldo_atual.toFixed(2)}`;
+                document.getElementById('conta-id').innerText = fin.login || fin.conta;
+
+                let html = '';
+                fin.posicoes.forEach(p => {
+                    html += `<tr>
+                        <td><b>${p.ativo}</b></td>
+                        <td style="color:${p.tipo=='COMPRA'?'#00ff88':'#ff4d4d'}">${p.tipo}</td>
+                        <td>${p.sl}</td><td>${p.tp}</td>
+                        <td style="${p.dist_sl_pontos < 30 ? 'color:red; font-weight:bold;' : ''}">${p.dist_sl_pontos} pts</td>
+                        <td style="font-weight:bold">R$ ${p.lucro}</td>
+                        <td><button class="btn-fechar" onclick="fecharIndividual(${p.ticket})">Fechar</button></td>
+                    </tr>`;
+                });
+                document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="7">Nenhuma ordem aberta</td></tr>';
+            } catch (e) { console.error("Erro na atualização:", e); }
         }
 
         async function updateChart() {
             const res = await fetch('/get_historico');
             const hist = await res.json();
-            chart.data.labels = hist.map(d => d.x);
-            chart.data.datasets[0].data = hist.map(d => d.y);
+            chart.data.labels = hist.map(h => h.x);
+            chart.data.datasets[0].data = hist.map(h => h.y);
             chart.update();
         }
 
-        async function fechar(ticket) {
-            await fetch('/fechar_ordem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ticket}) });
+        async function fecharIndividual(ticket) {
+            await fetch('/order', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ tipo: 'FECHAR_TICKET', ticket: ticket })
+            });
             alert("Comando de fechamento enviado!");
         }
 
-        setInterval(update, 2000);
-        setInterval(updateChart, 5000);
-    </script>
-</body>
-</html>
+        async function enviarPergunta() {
+            const input = document.getElementById('user-input');
+            const chatWin = document.getElementById('chat-window');
+            if(!input.value) return;
+            chatWin.innerHTML += `<p style="color:var(--yellow)"><b>Você:</b> ${input.value}</
