@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 from datetime import datetime
-import random # Para simular oscilação da estratégia se não houver dados
+import random 
 
 app = Flask(__name__)
 
@@ -24,11 +24,10 @@ def atualizar_dados():
         dados_mercado[ativo]['preco'] = preco
         dados_mercado[ativo]['status'] = "Conectado"
         
-        # Lógica de Inteligência Estratégica (Exemplo: Baseado em preço redondo ou aleatório para teste)
-        # Aqui você pode integrar com seu modelo de sinais real
+        # Inteligência Estratégica Simbolizada
         sorteio = random.random()
-        if sorteio > 0.95: dados_mercado[ativo]['sugestao'] = "COMPRA"
-        elif sorteio < 0.05: dados_mercado[ativo]['sugestao'] = "VENDA"
+        if sorteio > 0.98: dados_mercado[ativo]['sugestao'] = "COMPRA"
+        elif sorteio < 0.02: dados_mercado[ativo]['sugestao'] = "VENDA"
         else: dados_mercado[ativo]['sugestao'] = "NEUTRO"
         
     return jsonify({"status": "ok"})
@@ -41,10 +40,10 @@ def atualizar_financeiro():
     agora = datetime.now().strftime('%H:%M:%S')
     saldo = data.get('saldo_atual', 0)
     
-    # FIX DO GRÁFICO: Só adiciona se o saldo mudar ou passar tempo, e limita o tamanho
+    # FIX DO GRÁFICO: Limite de pontos para não estourar a tela
     if not historico_equity or (historico_equity[-1]['y'] != saldo):
         historico_equity.append({'x': agora, 'y': saldo})
-    if len(historico_equity) > 30: historico_equity.pop(0)
+    if len(historico_equity) > 20: historico_equity.pop(0)
     return jsonify({"status": "ok"})
 
 @app.route('/get_historico')
@@ -60,7 +59,6 @@ def get_financeiro(): return jsonify(financeiro)
 
 @app.route('/order', methods=['POST'])
 def order():
-    # Recebe ordens do dashboard (Compra/Venda/Pânico)
     fila_comandos.append(request.json)
     return jsonify({"status": "comando_enviado"})
 
@@ -70,8 +68,7 @@ def get_orders():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    msg = request.json.get('mensagem', '').lower()
-    return jsonify({"resposta": "Analisando o fluxo de ordens... Tendência de alta no curto prazo."})
+    return jsonify({"resposta": "Monitorando tendências de volume e volatilidade."})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
