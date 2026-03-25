@@ -15,15 +15,11 @@ if GEMINI_KEY:
 else:
     print("ERRO: Variável GEMINI_KEY não encontrada no sistema.")
 
-# Chave fixa para garantir funcionamento imediato
-#GEMINI_KEY = "AIzaSyBiSSdEwc7rxyO3cejY68jd8jDYv6q7WOo"
-
 # --- VARIÁVEIS GLOBAIS ---
+# Estrutura atualizada para suportar os dois ativos
 dados_reais = {
-    "preco": 0,
-    "bid": 0,
-    "ask": 0,
-    "status": "Aguardando MT5..."
+    "WIN": {"preco": 0, "bid": 0, "ask": 0, "status": "Aguardando MT5..."},
+    "WDO": {"preco": 0, "bid": 0, "ask": 0, "status": "Aguardando MT5..."}
 }
 
 # --- FUNÇÕES AUXILIARES ---
@@ -45,67 +41,70 @@ def index():
 def atualizar():
     global dados_reais
     content = request.json
-    dados_reais["preco"] = content.get('preco', 0)
-    dados_reais["bid"] = content.get('bid', 0)
-    dados_reais["ask"] = content.get('ask', 0)
-    dados_reais["status"] = "CONECTADO"
+    ativo = content.get('ativo', 'WIN') # O script ponte_mt5.py deve enviar o campo 'ativo'
+    
+    if ativo in dados_reais:
+        dados_reais[ativo]["preco"] = content.get('preco', 0)
+        dados_reais[ativo]["bid"] = content.get('bid', 0)
+        dados_reais[ativo]["ask"] = content.get('ask', 0)
+        dados_reais[ativo]["status"] = "CONECTADO"
+    
     return "OK", 200
 
 @app.route('/get_signal')
 def get_signal():
-    preco_base = dados_reais["preco"] if dados_reais["preco"] > 0 else 120000
+    # Retorna sinais baseados no ativo solicitado (padrão WIN)
+    ativo = request.args.get('ativo', 'WIN')
+    info = dados_reais.get(ativo, dados_reais["WIN"])
+    
+    preco_base = info["preco"] if info["preco"] > 0 else (120000 if ativo == "WIN" else 5000)
     precos_simulados = [preco_base + random.uniform(-50, 50) for _ in range(30)]
     df = pd.DataFrame(precos_simulados, columns=['close'])
     
     rsi_val = calcular_rsi(df['close']).iloc[-1]
     
     if rsi_val < 35:
-        sinal, cor = "COMPRA (JURITY IA)", "#00ff88"
+        sinal, cor = f"COMPRA {ativo} (JURITY)", "#00ff88"
     elif rsi_val > 65:
-        sinal, cor = "VENDA (JURITY IA)", "#ff3b3b"
+        sinal, cor = f"VENDA {ativo} (JURITY)", "#ff3b3b"
     else:
         sinal, cor = "AGUARDAR", "#f0b90b"
 
     return jsonify({
         "sinal": sinal,
         "cor": cor,
-        "preco": dados_reais["preco"],
-        "status": dados_reais["status"]
+        "preco": info["preco"],
+        "status": info["status"]
     })
 
 @app.route('/chat', methods=['POST'])
 def chat():
     user_msg = request.json.get('mensagem')
-    preco_atual = dados_reais.get("preco", 0)
     
-    # Simulação de indicadores para a IA analisar
-    # Em um cenário real, esses dados viriam do seu histórico de preços
-    precos_base = [preco_atual + random.uniform(-100, 100) for _ in range(20)]
-    df = pd.DataFrame(precos_base, columns=['close'])
+    # Dados para a IA
+    win_p = dados_reais["WIN"]["preco"]
+    wdo_p = dados_reais["WDO"]["preco"]
     
-    rsi_atual = calcular_rsi(df['close']).iloc[-1]
-    media_curta = df['close'].tail(9).mean() # Média de 9 períodos
-    media_longa = df['close'].tail(20).mean() # Média de 20 períodos
-    tendencia = "ALTA" if media_curta > media_longa else "BAIXA"
+    # Gera indicadores rápidos para o Índice (WIN) como exemplo de contexto
+    precos_win = [win_p + random.uniform(-100, 100) for _ in range(20)]
+    df_win = pd.DataFrame(precos_win, columns=['close'])
+    rsi_win = calcular_rsi(df_win['close']).iloc[-1]
 
-    # O COMANDO MESTRE: Instrução de Análise Técnica
+    # O COMANDO MESTRE: Agora com contexto de Índice e Dólar
     prompt = f"""
     Você é a Jurity IA, Consultora Senior de Risco na B3.
-    DADOS DO TICKER:
-    - Preço Atual: {preco_atual}
-    - RSI (14): {rsi_atual:.2f}
-    - Tendência (Médias 9/20): {tendencia}
+    MERCADO AGORA:
+    - Mini Índice (WIN): {win_p} (RSI: {rsi_win:.2f})
+    - Mini Dólar (WDO): {wdo_p}
     
     PERGUNTA DO TRADER: {user_msg}
     
-    INSTRUÇÃO: Se o trader perguntar sobre "entrar" ou "operar", analise os dados acima. 
-    Dê uma NOTA de 0 a 10 para a operação baseada em:
-    1. RSI esticado (sobrecompra/sobrevenda).
-    2. Alinhamento com a tendência das médias.
-    Responda de forma ultra-curta e profissional.
+    INSTRUÇÃO: Analise os dados. Se for sobre entrada, dê nota 0 a 10. 
+    Lembre-se da correlação: geralmente quando o Índice sobe, o Dólar cai.
+    Responda de forma técnica, ultra-curta e profissional.
     """
-    # Lista de modelos para tentar (do mais novo para o mais estável)
-    modelos_para_tentar = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-pro']
+    
+    modelos_para_tentar = ['gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-pro']
     
     for nome_modelo in modelos_para_tentar:
         try:
@@ -113,11 +112,10 @@ def chat():
             response = model.generate_content(prompt)
             return jsonify({"resposta": response.text})
         except Exception:
-            continue # Tenta o próximo modelo da lista se o atual der erro 404
+            continue
             
-    return jsonify({"resposta": "Jurity está processando dados. Tente novamente em instantes."})
+    return jsonify({"resposta": "Jurity está processando dados. Tente novamente."})
 
-# --- INICIALIZAÇÃO ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
