@@ -55,12 +55,17 @@ def atualizar():
 def atualizar_fin():
     global financeiro, posicoes_abertas, historico_performance
     data = request.json
-    financeiro.update(data)
+    financeiro.update({
+        "resultado_dia": data.get('resultado_dia'),
+        "em_aberto": data.get('em_aberto'),
+        "saldo_atual": data.get('saldo_atual'),
+        "conta": data.get('conta')
+    })
     posicoes_abertas = data.get('posicoes', [])
     agora = datetime.datetime.now().strftime("%H:%M:%S")
     if not historico_performance or historico_performance[-1]["acumulado"] != data.get('saldo_atual'):
         historico_performance.append({"horario": agora, "acumulado": data.get('saldo_atual')})
-        if len(historico_performance) > 100: historico_performance.pop(0)
+        if len(historico_performance) > 60: historico_performance.pop(0)
     return "OK"
 
 @app.route('/get_signal')
@@ -69,18 +74,20 @@ def get_signal():
     return jsonify({
         "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "sug": gerar_sugestao(m_win)},
         "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "sug": gerar_sugestao(m_wdo)},
-        "fin": financeiro, "posicoes": posicoes_abertas, "historico": historico_performance
+        "fin": financeiro, 
+        "posicoes": posicoes_abertas, 
+        "historico": historico_performance
     })
 
 @app.route('/chat', methods=['POST'])
 def chat():
     user_msg = request.json.get('mensagem')
-    prompt = f"Trader: {user_msg}. WIN: {dados_reais['WIN']['preco']}, WDO: {dados_reais['WDO']['preco']}. Saldo: {financeiro['saldo_atual']}. Analise como Jurity 2.5 Flash."
+    prompt = f"Analise como Jurity 2.5 Flash: {user_msg}. Contexto: WIN={dados_reais['WIN']['preco']}, WDO={dados_reais['WDO']['preco']}, Equity={financeiro['saldo_atual']}."
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         res = model.generate_content(prompt)
         return jsonify({"resposta": res.text})
-    except: return jsonify({"resposta": "Erro de API."})
+    except: return jsonify({"resposta": "Erro Gemini 2.5."})
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
@@ -96,8 +103,9 @@ def get_orders():
     if fila_ordens["PANIC"]:
         fila_ordens["PANIC"] = False
         return jsonify({"tipo": "PANIC"})
-    ordem = fila_ordens.get(request.args.get('ativo'))
-    fila_ordens[request.args.get('ativo')] = None
+    ativo = request.args.get('ativo')
+    ordem = fila_ordens.get(ativo)
+    fila_ordens[ativo] = None
     return jsonify(ordem)
 
 if __name__ == '__main__':
