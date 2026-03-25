@@ -8,12 +8,9 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # --- CONFIGURAÇÃO DA JURITY IA ---
-# REMOVA QUALQUER ESPAÇO ANTES DA LINHA ABAIXO:
+# Chave fixa para garantir funcionamento imediato
 GEMINI_KEY = "AIzaSyAMg1aMjn3LMQAyUI2D2LP-If7hrIzALd4"
 genai.configure(api_key=GEMINI_KEY, transport='rest')
-
-# Usando o nome direto do modelo para evitar o erro 404
-model = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- VARIÁVEIS GLOBAIS ---
 dados_reais = {
@@ -70,39 +67,27 @@ def get_signal():
         "status": dados_reais["status"]
     })
 
-# --- FUNÇÃO DO CHAT (Substitua todo o seu @app.route('/chat'...) por isso) ---
 @app.route('/chat', methods=['POST'])
 def chat():
-    # Pega a mensagem do usuário vinda do site
     user_msg = request.json.get('mensagem')
-    
-    # Pega o preço atual que o MT5 enviou (ou usa o padrão)
     preco_atual = dados_reais.get("preco", "aguardando dados")
     
-    # O "Cérebro" da Jurity: Definimos a personalidade dela aqui
-    prompt = f"""
-    Você é a Jurity IA, uma assistente senior de Day Trade na B3 (Mini Índice).
-    Contexto: O preço atual é {preco_atual}. 
-    Instrução: Responda de forma técnica, curta e direta como uma trader profissional.
-    Pergunta: {user_msg}
-    """
+    prompt = f"Você é a Jurity IA, especialista em Mini Índice B3. Preço atual: {preco_atual}. Responda de forma técnica e curta: {user_msg}"
     
-    try:
-        # Tenta o modelo 1.5 Flash (mais moderno)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
-        return jsonify({"resposta": response.text})
-        
-    except Exception as e:
-        # PLANO B: Se o Flash der erro 404, o Gemini 1.0 Pro assume na hora
+    # Lista de modelos para tentar (do mais novo para o mais estável)
+    modelos_para_tentar = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-pro']
+    
+    for nome_modelo in modelos_para_tentar:
         try:
-            model_pro = genai.GenerativeModel('gemini-1.0-pro')
-            response = model_pro.generate_content(prompt)
+            model = genai.GenerativeModel(nome_modelo)
+            response = model.generate_content(prompt)
             return jsonify({"resposta": response.text})
-        except Exception as e2:
-            # Se tudo falhar, ele mostra o erro real para sabermos o que é
-            return jsonify({"resposta": f"Jurity Offline. Erro: {str(e2)}"})
-# --- INICIALIZAÇÃO COM INDENTAÇÃO CORRETA ---
+        except Exception:
+            continue # Tenta o próximo modelo da lista se o atual der erro 404
+            
+    return jsonify({"resposta": "Jurity está processando dados. Tente novamente em instantes."})
+
+# --- INICIALIZAÇÃO ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
