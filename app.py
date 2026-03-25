@@ -70,22 +70,42 @@ def get_signal():
 @app.route('/chat', methods=['POST'])
 def chat():
     user_msg = request.json.get('mensagem')
-    preco_atual = dados_reais.get("preco", "aguardando dados")
+    preco_atual = dados_reais.get("preco", 0)
     
-    prompt = f"Você é a Jurity IA, especialista em Mini Índice B3. Preço atual: {preco_atual}. Responda de forma técnica e curta: {user_msg}"
+    # Simulação de indicadores para a IA analisar
+    # Em um cenário real, esses dados viriam do seu histórico de preços
+    precos_base = [preco_atual + random.uniform(-100, 100) for _ in range(20)]
+    df = pd.DataFrame(precos_base, columns=['close'])
     
-    # Lista de modelos para tentar (do mais novo para o mais estável)
-    modelos_para_tentar = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-pro']
+    rsi_atual = calcular_rsi(df['close']).iloc[-1]
+    media_curta = df['close'].tail(9).mean() # Média de 9 períodos
+    media_longa = df['close'].tail(20).mean() # Média de 20 períodos
+    tendencia = "ALTA" if media_curta > media_longa else "BAIXA"
+
+    # O COMANDO MESTRE: Instrução de Análise Técnica
+    prompt = f"""
+    Você é a Jurity IA, Consultora Senior de Risco na B3.
+    DADOS DO TICKER:
+    - Preço Atual: {preco_atual}
+    - RSI (14): {rsi_atual:.2f}
+    - Tendência (Médias 9/20): {tendencia}
     
-    for nome_modelo in modelos_para_tentar:
-        try:
-            model = genai.GenerativeModel(nome_modelo)
-            response = model.generate_content(prompt)
-            return jsonify({"resposta": response.text})
-        except Exception:
-            continue # Tenta o próximo modelo da lista se o atual der erro 404
-            
-    return jsonify({"resposta": "Jurity está processando dados. Tente novamente em instantes."})
+    PERGUNTA DO TRADER: {user_msg}
+    
+    INSTRUÇÃO: Se o trader perguntar sobre "entrar" ou "operar", analise os dados acima. 
+    Dê uma NOTA de 0 a 10 para a operação baseada em:
+    1. RSI esticado (sobrecompra/sobrevenda).
+    2. Alinhamento com a tendência das médias.
+    Responda de forma ultra-curta e profissional.
+    """
+    
+    try:
+        # Usando o modelo Pro que é o mais estável para evitar o 404
+        model = genai.GenerativeModel('gemini-1.0-pro')
+        response = model.generate_content(prompt)
+        return jsonify({"resposta": response.text})
+    except Exception as e:
+        return jsonify({"resposta": f"Jurity Offline: {str(e)}"})
 
 # --- INICIALIZAÇÃO ---
 if __name__ == '__main__':
