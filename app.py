@@ -11,7 +11,7 @@ GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
 
-# --- GLOBAL STORE ---
+# --- ARMAZENAMENTO ---
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
 financeiro = {"resultado_dia": 0.0, "em_aberto": 0.0, "saldo_atual": 0.0, "conta": "Desconectado"}
@@ -30,6 +30,7 @@ def calcular_metricas(ativo):
     rsi = 100 - (100 / (1 + rs.iloc[-1]))
     ma10, ma30 = df['close'].tail(10).mean(), df['close'].tail(30).mean()
     tend = "ALTA" if ma10 > ma30 else "BAIXA"
+    
     forca = 0
     if tend == "ALTA" and rsi < 40: forca = 70 + (40 - rsi)
     if tend == "BAIXA" and rsi > 60: forca = 70 + (rsi - 60)
@@ -52,14 +53,13 @@ def atualizar():
 def atualizar_fin():
     global financeiro, posicoes_abertas, historico_performance
     data = request.json
-    # Sincroniza com as chaves exatas da sua ponte_mt5.py
     financeiro.update({
         "resultado_dia": data.get('resultado_dia', 0),
         "em_aberto": data.get('em_aberto', 0),
         "saldo_atual": data.get('saldo_atual', 0),
         "conta": data.get('conta', "Desconectado")
     })
-    posicoes_abertas = data.get('posicoes', [])
+    posicoes_abertas = data.get('posicoes', []) # AQUI VEM A TABELA
     
     agora = datetime.datetime.now().strftime("%H:%M:%S")
     if not historico_performance or historico_performance[-1]["acumulado"] != data['saldo_atual']:
@@ -70,26 +70,31 @@ def atualizar_fin():
 @app.route('/get_signal')
 def get_signal():
     m_win, m_wdo = calcular_metricas("WIN"), calcular_metricas("WDO")
+    
     def gerar_decisao(m):
         if m['forca'] >= 75:
-            acao = "BUY" if m['tendencia'] == "ALTA" else "SELL"
-            return {"acao": acao, "msg": f"IA: {m['forca']}% CONF. EM {acao}", "conf": m['forca']}
+            acao = "COMPRA" if m['tendencia'] == "ALTA" else "VENDA"
+            tipo_tecnico = "BUY" if m['tendencia'] == "ALTA" else "SELL"
+            return {"acao": tipo_tecnico, "msg": f"IA: {m['forca']}% CONF. EM {acao}", "conf": m['forca']}
         return None
+
     return jsonify({
         "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "decisao": gerar_decisao(m_win)},
         "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "decisao": gerar_decisao(m_wdo)},
-        "fin": financeiro, "posicoes": posicoes_abertas, "historico": historico_performance
+        "fin": financeiro, 
+        "posicoes": posicoes_abertas, 
+        "historico": historico_performance
     })
 
 @app.route('/chat', methods=['POST'])
 def chat():
     msg = request.json.get('mensagem')
-    prompt = f"Trader: {msg}. Contexto: WIN={dados_reais['WIN']['preco']}, Equity=R${financeiro['saldo_atual']}. Responda brevemente."
+    prompt = f"Você é a Jurity IA 2.5 Flash. Trader perguntou: {msg}. Contexto: WIN={dados_reais['WIN']['preco']}, Saldo=R${financeiro['saldo_atual']}. Responda em português de forma técnica e curta."
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         res = model.generate_content(prompt)
         return jsonify({"resposta": res.text})
-    except: return jsonify({"resposta": "Erro Gemini 2.5."})
+    except: return jsonify({"resposta": "IA Jurity temporariamente fora de área."})
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
@@ -105,9 +110,8 @@ def get_orders():
     if fila_ordens["PANIC"]:
         fila_ordens["PANIC"] = False
         return jsonify({"tipo": "PANIC"})
-    ativo = request.args.get('ativo')
-    ordem = fila_ordens.get(ativo)
-    fila_ordens[ativo] = None
+    ordem = fila_ordens.get(request.args.get('ativo'))
+    fila_ordens[request.args.get('ativo')] = None
     return jsonify(ordem)
 
 if __name__ == '__main__':
