@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # --- CONFIGURAÇÃO DA JURITY IA ---
 # Chave fixa para garantir funcionamento imediato
-GEMINI_KEY = "AIzaSyAMg1aMjn3LMQAyUI2D2LP-If7hrIzALd4"
+GEMINI_KEY = "AIzaSyBiSSdEwc7rxyO3cejY68jd8jDYv6q7WOo"
 genai.configure(api_key=GEMINI_KEY, transport='rest')
 
 # --- VARIÁVEIS GLOBAIS ---
