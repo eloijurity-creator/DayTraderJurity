@@ -8,9 +8,15 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # --- CONFIGURAÇÃO DA JURITY IA ---
+GEMINI_KEY = os.environ.get("GEMINI_KEY")
+
+if GEMINI_KEY:
+    genai.configure(api_key=GEMINI_KEY, transport='rest')
+else:
+    print("ERRO: Variável GEMINI_KEY não encontrada no sistema.")
+
 # Chave fixa para garantir funcionamento imediato
-GEMINI_KEY = "AIzaSyBiSSdEwc7rxyO3cejY68jd8jDYv6q7WOo"
-genai.configure(api_key=GEMINI_KEY, transport='rest')
+#GEMINI_KEY = "AIzaSyBiSSdEwc7rxyO3cejY68jd8jDYv6q7WOo"
 
 # --- VARIÁVEIS GLOBAIS ---
 dados_reais = {
