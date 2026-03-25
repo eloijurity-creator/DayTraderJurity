@@ -6,12 +6,12 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO GEMINI 2.5 FLASH ---
+# --- IA CONFIG ---
 GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
 
-# --- BANCO DE DADOS EM MEMÓRIA ---
+# --- MEMÓRIA DO SISTEMA ---
 historico_precos = {"WIN": [], "WDO": []}
 dados_reais = {"WIN": {"preco": 0}, "WDO": {"preco": 0}}
 financeiro = {"resultado_dia": 0.0, "em_aberto": 0.0, "saldo_atual": 0.0, "conta": "Desconectado"}
@@ -19,9 +19,9 @@ posicoes_abertas = []
 historico_performance = []
 fila_ordens = {"WIN": None, "WDO": None, "PANIC": False}
 
-def calcular_metricas(ativo):
+def calcular_ia(ativo):
     precos = historico_precos[ativo]
-    if len(precos) < 20: return {"tendencia": "LATERAL", "rsi": 50.0, "forca": 0}
+    if len(precos) < 20: return {"tendencia": "NEUTRA", "rsi": 50.0, "forca": 0}
     df = pd.DataFrame(precos, columns=['close'])
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
@@ -32,8 +32,8 @@ def calcular_metricas(ativo):
     tend = "ALTA" if ma10 > ma30 else "BAIXA"
     
     forca = 0
-    if tend == "ALTA" and rsi < 35: forca = 75 + (35 - rsi)
-    if tend == "BAIXA" and rsi > 65: forca = 75 + (rsi - 65)
+    if tend == "ALTA" and rsi < 35: forca = 80 + (35 - rsi)
+    if tend == "BAIXA" and rsi > 65: forca = 80 + (rsi - 65)
     return {"tendencia": tend, "rsi": rsi, "forca": min(int(forca), 100)}
 
 @app.route('/')
@@ -53,43 +53,38 @@ def atualizar():
 def atualizar_fin():
     global financeiro, posicoes_abertas, historico_performance
     data = request.json
-    financeiro.update({
-        "resultado_dia": data.get('resultado_dia', 0),
-        "em_aberto": data.get('em_aberto', 0),
-        "saldo_atual": data.get('saldo_atual', 0),
-        "conta": data.get('conta', "Desconectado")
-    })
+    financeiro.update(data)
     posicoes_abertas = data.get('posicoes', [])
     agora = datetime.datetime.now().strftime("%H:%M:%S")
-    if not historico_performance or historico_performance[-1]["acumulado"] != data['saldo_atual']:
+    if not historico_performance or (len(historico_performance) == 0 or historico_performance[-1]["acumulado"] != data['saldo_atual']):
         historico_performance.append({"horario": agora, "acumulado": data['saldo_atual']})
-        if len(historico_performance) > 60: historico_performance.pop(0)
+        if len(historico_performance) > 50: historico_performance.pop(0)
     return "OK"
 
 @app.route('/get_signal')
 def get_signal():
-    m_win, m_wdo = calcular_metricas("WIN"), calcular_metricas("WDO")
-    def gerar_decisao(m):
-        if m['forca'] >= 75:
-            acao_traduzida = "COMPRA" if m['tendencia'] == "ALTA" else "VENDA"
-            tipo_mt5 = "BUY" if m['tendencia'] == "ALTA" else "SELL"
-            return {"acao": tipo_mt5, "msg": f"IA: {m['forca']}% CONF. EM {acao_traduzida}", "conf": m['forca']}
+    m_win, m_wdo = calcular_ia("WIN"), calcular_ia("WDO")
+    def gerar_sugestao(m):
+        if m['forca'] >= 80:
+            tipo = "BUY" if m['tendencia'] == "ALTA" else "SELL"
+            return {"tipo": tipo, "texto": f"IA SUGERE {tipo} ({m['forca']}% CONF.)", "forca": m['forca']}
         return None
+
     return jsonify({
-        "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "decisao": gerar_decisao(m_win)},
-        "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "decisao": gerar_decisao(m_wdo)},
+        "win": {"preco": dados_reais["WIN"]["preco"], "rsi": round(m_win['rsi'],1), "tend": m_win['tendencia'], "sugestao": gerar_sugestao(m_win)},
+        "wdo": {"preco": dados_reais["WDO"]["preco"], "rsi": round(m_wdo['rsi'],1), "tend": m_wdo['tendencia'], "sugestao": gerar_sugestao(m_wdo)},
         "fin": financeiro, "posicoes": posicoes_abertas, "historico": historico_performance
     })
 
 @app.route('/chat', methods=['POST'])
 def chat():
     msg = request.json.get('mensagem')
-    prompt = f"Você é a Jurity IA 2.5. Responda em português técnico. WIN={dados_reais['WIN']['preco']}, Saldo=R${financeiro['saldo_atual']}. Pergunta: {msg}"
+    prompt = f"Você é a Jurity IA 2.5 Flash. Trader pergunta: {msg}. Contexto: WIN={dados_reais['WIN']['preco']}, Saldo=R${financeiro['saldo_atual']}. Responda curto e técnico em PT-BR."
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         res = model.generate_content(prompt)
         return jsonify({"resposta": res.text})
-    except: return jsonify({"resposta": "Conexão com Jurity IA instável."})
+    except: return jsonify({"resposta": "IA Offline."})
 
 @app.route('/set_order', methods=['POST'])
 def set_order():
