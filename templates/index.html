@@ -2,20 +2,21 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA - Trading</title>
+    <title>Jurity IA - Trading Dashboard</title>
     <style>
         body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .card { background: #1e2329; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; width: 280px; }
         .price { font-size: 32px; color: #f0b90b; font-weight: bold; margin: 10px 0; }
-        .btn-buy { background: #00ff88; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; border-radius: 4px; }
-        .btn-sell { background: #ff3b3b; color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; border-radius: 4px; }
-        .status-bar { width: 600px; background: #2b3139; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 13px; }
-        table { width: 600px; border-collapse: collapse; margin-top: 15px; font-size: 12px; background: #1e2329; }
-        th { background: #2b3139; color: #848e9c; padding: 10px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #333; }
-        .btn-panic { background: #ff3b3b; color: white; border: none; padding: 12px; width: 600px; margin-top: 10px; font-weight: bold; cursor: pointer; border-radius: 8px; }
-        #chat-win { height: 100px; overflow-y: auto; background: #000; width: 580px; padding: 10px; margin-top: 10px; border-radius: 8px; font-size: 12px; border: 1px solid #333; }
-        .gain { color: #00ff88; } .loss { color: #ff3b3b; }
+        .btn-buy { background: #02c076; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; border-radius: 4px; color: white; }
+        .btn-sell { background: #cf304a; color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 48%; border-radius: 4px; }
+        .status-bar { width: 700px; background: #2b3139; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 13px; border: 1px solid #444; }
+        table { width: 700px; border-collapse: collapse; margin-top: 15px; font-size: 12px; background: #1e2329; border-radius: 8px; overflow: hidden; }
+        th { background: #2b3139; color: #848e9c; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #333; text-align: left; }
+        .btn-panic { background: #ff3b3b; color: white; border: none; padding: 12px; width: 700px; margin-top: 10px; font-weight: bold; cursor: pointer; border-radius: 8px; }
+        #chat-win { height: 100px; overflow-y: auto; background: #000; width: 680px; padding: 10px; margin-top: 10px; border-radius: 8px; font-size: 12px; border: 1px solid #333; }
+        .gain { color: #02c076; } .loss { color: #cf304a; }
+        input[type="number"] { background: #0b0e11; border: 1px solid #444; color: white; padding: 4px; border-radius: 4px; width: 50px; text-align: center; }
     </style>
 </head>
 <body>
@@ -23,37 +24,47 @@
     
     <div class="status-bar">
         <span>CONTA: <b id="fin-conta">...</b></span>
-        <span>HOJE: <b id="fin-hoje">R$ 0,00</b></span>
-        <span>ABERTO: <b id="fin-aberto">R$ 0,00</b></span>
+        <span>LUCRO HOJE: <b id="fin-hoje">R$ 0,00</b></span>
+        <span>EM ABERTO: <b id="fin-aberto">R$ 0,00</b></span>
     </div>
 
     <div style="display:flex; gap:15px; margin-bottom: 10px;">
         <div class="card">
-            <h3>WIN</h3>
+            <h3>WIN (ÍNDICE)</h3>
             <div id="p-win" class="price">0</div>
-            <div style="margin-bottom:10px;">LOTES: <input type="number" id="lote-win" value="1" style="width:40px"></div>
-            <button class="btn-buy" onclick="ordem('WIN','BUY')">COMPRA</button>
-            <button class="btn-sell" onclick="ordem('WIN','SELL')">VENDA</button>
+            <div style="margin-bottom:10px;">CONTRATOS: <input type="number" id="lote-win" value="1"></div>
+            <button class="btn-buy" onclick="ordem('WIN','BUY')">COMPRAR</button>
+            <button class="btn-sell" onclick="ordem('WIN','SELL')">VENDER</button>
         </div>
         <div class="card">
-            <h3>WDO</h3>
+            <h3>WDO (DÓLAR)</h3>
             <div id="p-wdo" class="price">0</div>
-            <div style="margin-bottom:10px;">LOTES: <input type="number" id="lote-wdo" value="1" style="width:40px"></div>
-            <button class="btn-buy" onclick="ordem('WDO','BUY')">COMPRA</button>
-            <button class="btn-sell" onclick="ordem('WDO','SELL')">VENDA</button>
+            <div style="margin-bottom:10px;">CONTRATOS: <input type="number" id="lote-wdo" value="1"></div>
+            <button class="btn-buy" onclick="ordem('WDO','BUY')">COMPRAR</button>
+            <button class="btn-sell" onclick="ordem('WDO','SELL')">VENDER</button>
         </div>
     </div>
 
-    <button class="btn-panic" onclick="ordem('ALL','PANIC')">🚨 ZERAR TUDO 🚨</button>
+    <button class="btn-panic" onclick="ordem('ALL','PANIC')">🚨 BOTÃO DE PÂNICO: ZERAR TUDO 🚨</button>
 
-    <h4 style="margin: 20px 0 5px 0; color: #848e9c;">ORDENS EM ABERTO</h4>
+    <h4 style="margin: 20px 0 5px 0; color: #848e9c; align-self: flex-start; width: 700px;">POSIÇÕES EM ABERTO</h4>
     <table>
-        <thead><tr><th>ATIVO</th><th>TIPO</th><th>LOTES</th><th>PREÇO ENTRADA</th><th>LUCRO ATUAL</th></tr></thead>
+        <thead>
+            <tr>
+                <th>ATIVO</th>
+                <th>TIPO</th>
+                <th>LOTES</th>
+                <th>ENTRADA</th>
+                <th style="color: #ff3b3b;">S.L.</th>
+                <th style="color: #02c076;">T.P.</th>
+                <th>LUCRO</th>
+            </tr>
+        </thead>
         <tbody id="t-aberto"></tbody>
     </table>
 
     <div id="chat-win"></div>
-    <input type="text" id="msg-in" placeholder="Fale com a IA..." style="width:590px; padding:10px; margin-top:5px; background:#1e2329; color:white; border:1px solid #444;">
+    <input type="text" id="msg-in" placeholder="Perguntar à IA..." style="width:680px; padding:12px; margin-top:5px; background:#1e2329; color:white; border:1px solid #444; border-radius: 8px;">
 
     <script>
         async function ordem(ativo, tipo) {
@@ -62,40 +73,45 @@
         }
 
         async function update() {
-            const r = await fetch(`/get_signal?ativo=WIN`);
-            const d = await r.json();
-            document.getElementById('p-win').innerText = d.preco;
-            document.getElementById('fin-conta').innerText = d.fin.conta;
-            document.getElementById('fin-hoje').innerText = `R$ ${d.fin.lucro_hoje.toFixed(2)}`;
-            document.getElementById('fin-aberto').innerText = `R$ ${d.fin.em_aberto.toFixed(2)}`;
-            
-            // Tabela de Ordens
-            document.getElementById('t-aberto').innerHTML = d.posicoes.map(p => `
-                <tr>
-                    <td>${p.symbol}</td>
-                    <td class="${p.type == 0 ? 'gain' : 'loss'}">${p.type == 0 ? 'COMPRA' : 'VENDA'}</td>
-                    <td>${p.volume}</td>
-                    <td>${p.price_open}</td>
-                    <td class="${p.profit >= 0 ? 'gain' : 'loss'}">R$ ${p.profit.toFixed(2)}</td>
-                </tr>
-            `).join('');
+            try {
+                const r = await fetch(`/get_signal?ativo=WIN`);
+                const d = await r.json();
+                document.getElementById('p-win').innerText = d.preco;
+                document.getElementById('fin-conta').innerText = d.fin.conta;
+                document.getElementById('fin-hoje').innerText = `R$ ${d.fin.lucro_hoje.toFixed(2)}`;
+                document.getElementById('fin-aberto').innerText = `R$ ${d.fin.em_aberto.toFixed(2)}`;
+                document.getElementById('fin-aberto').className = d.fin.em_aberto >= 0 ? 'gain' : 'loss';
+                
+                document.getElementById('t-aberto').innerHTML = d.posicoes.map(p => `
+                    <tr>
+                        <td><b>${p.symbol}</b></td>
+                        <td class="${p.type == 0 ? 'gain' : 'loss'}">${p.type == 0 ? 'COMPRA' : 'VENDA'}</td>
+                        <td>${p.volume}</td>
+                        <td>${p.price_open}</td>
+                        <td style="color: #ff7c7c;">${p.sl || '-'}</td>
+                        <td style="color: #a5ffcc;">${p.tp || '-'}</td>
+                        <td class="${p.profit >= 0 ? 'gain' : 'loss'}">R$ ${p.profit.toFixed(2)}</td>
+                    </tr>
+                `).join('');
 
-            const r2 = await fetch(`/get_signal?ativo=WDO`);
-            const d2 = await r2.json();
-            document.getElementById('p-wdo').innerText = d2.preco;
+                const r2 = await fetch(`/get_signal?ativo=WDO`);
+                const d2 = await r2.json();
+                document.getElementById('p-wdo').innerText = d2.preco;
+            } catch(e) {}
         }
 
         document.getElementById('msg-in').addEventListener('keypress', async (e) => {
             if(e.key === 'Enter') {
                 const val = e.target.value; e.target.value = '';
                 const win = document.getElementById('chat-win');
-                win.innerHTML += `<p><b>Você:</b> ${val}</p>`;
+                win.innerHTML += `<p><b>Tu:</b> ${val}</p>`;
                 const res = await fetch('/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mensagem:val})});
                 const data = await res.json();
-                win.innerHTML += `<p style="color:#00ff88"><b>Jurity:</b> ${data.resposta}</p>`;
+                win.innerHTML += `<p style="color:#00ff88"><b>Jurity IA:</b> ${data.resposta}</p>`;
+                win.scrollTop = win.scrollHeight;
             }
         });
-        setInterval(update, 2000);
+        setInterval(update, 1500);
     </script>
 </body>
 </html>
