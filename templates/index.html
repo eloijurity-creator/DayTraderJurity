@@ -2,39 +2,28 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA - Master Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Jurity IA Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; }
-        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; }
-        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
-        th { text-align: left; color: #888; padding: 8px; border-bottom: 1px solid #333; }
-        td { padding: 8px; border-bottom: 1px solid #222; }
-        .alert-sl { color: var(--red); font-weight: bold; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        body { background: #0b0e11; color: white; font-family: sans-serif; padding: 20px; }
+        .card { background: #1e2329; border: 1px solid #333; border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
+        .btn-fechar { background: #ff4d4d; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h2 style="color:var(--yellow)">Jurity IA <small style="color:#555">| Account: <span id="conta-id">---</span></small></h2>
+    <h2>Jurity IA | Conta: <span id="conta-id">---</span></h2>
     
-    <div class="dashboard">
-        <div class="card">
-            <h4><i class="fas fa-wallet"></i> R$ Diário: <span id="res-dia" style="color:var(--green)">0.00</span></h4>
-            <p>Saldo Equity: R$ <span id="saldo-atual">0.00</span></p>
-        </div>
-        <div class="card" style="grid-column: span 2;">
-            <canvas id="perfChart" height="100"></canvas>
-        </div>
+    <div class="card">
+        <canvas id="perfChart" height="80"></canvas>
     </div>
 
-    <div class="card" style="margin-top:20px">
-        <h5><i class="fas fa-shield-alt"></i> Gerenciamento de Ordens & Stops</h5>
+    <div class="card">
+        <h3>Ordens em Aberto</h3>
         <table>
             <thead>
-                <tr><th>Ativo</th><th>Lado</th><th>Entrada</th><th>Stop Loss</th><th>Take Profit</th><th>Dist. SL</th><th>Lucro</th></tr>
+                <tr><th>Ativo</th><th>Lado</th><th>SL</th><th>TP</th><th>Dist. SL</th><th>Lucro</th><th>Ação</th></tr>
             </thead>
             <tbody id="tabela-ordens"></tbody>
         </table>
@@ -44,32 +33,26 @@
         const ctx = document.getElementById('perfChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [{ label: 'Equity R$', data: [], borderColor: '#f0b90b', tension: 0.2, fill: false }] },
-            options: { responsive: true, scales: { y: { grid: { color: '#222' } }, x: { display: false } } }
+            data: { labels: [], datasets: [{ label: 'Saldo (R$)', data: [], borderColor: '#f0b90b', fill: false }] }
         });
 
         async function update() {
-            const resFin = await fetch('/get_financeiro');
-            const fin = await resFin.json();
-            
-            document.getElementById('res-dia').innerText = fin.resultado_dia.toFixed(2);
-            document.getElementById('saldo-atual').innerText = fin.saldo_atual.toFixed(2);
-            document.getElementById('conta-id').innerText = fin.conta;
+            const res = await fetch('/get_financeiro');
+            const data = await res.json();
+            document.getElementById('conta-id').innerText = data.conta;
 
             let html = '';
-            fin.posicoes.forEach(p => {
-                const slClass = p.dist_sl_pontos < 40 ? 'alert-sl' : '';
+            data.posicoes.forEach(p => {
                 html += `<tr>
-                    <td><b>${p.ativo}</b></td>
+                    <td>${p.ativo}</td>
                     <td style="color:${p.tipo=='COMPRA'?'#0f8':'#f44'}">${p.tipo}</td>
-                    <td>${p.preco_abertura}</td>
-                    <td style="color:var(--red)">${p.sl || 'N/A'}</td>
-                    <td style="color:var(--green)">${p.tp || 'N/A'}</td>
-                    <td class="${slClass}">${p.dist_sl_pontos} pts</td>
-                    <td style="font-weight:bold">R$ ${p.lucro}</td>
+                    <td>${p.sl}</td><td>${p.tp}</td>
+                    <td>${p.dist_sl} pts</td>
+                    <td>R$ ${p.lucro}</td>
+                    <td><button class="btn-fechar" onclick="fechar(${p.ticket})">Fechar</button></td>
                 </tr>`;
             });
-            document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="7">Nenhuma ordem aberta</td></tr>';
+            document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="7">Nenhuma ordem</td></tr>';
         }
 
         async function updateChart() {
@@ -78,6 +61,11 @@
             chart.data.labels = hist.map(d => d.x);
             chart.data.datasets[0].data = hist.map(d => d.y);
             chart.update();
+        }
+
+        async function fechar(ticket) {
+            await fetch('/fechar_ordem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ticket}) });
+            alert("Comando de fechamento enviado!");
         }
 
         setInterval(update, 2000);
