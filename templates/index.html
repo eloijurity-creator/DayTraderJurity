@@ -2,31 +2,37 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA - v2.5 Master</title>
+    <title>Jurity IA - Master Dashboard v2.5</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; }
-        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        .logo { width: 100px; filter: drop-shadow(0 0 5px var(--yellow)); margin-bottom: 15px; }
+        :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; --text: #eaeaea; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Barra Financeira */
-        .account-bar { background: var(--card); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px; display: flex; justify-content: center; gap: 40px; margin-bottom: 25px; width: 100%; max-width: 1200px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .acc-item { text-align: center; }
+        .logo { width: 100px; filter: drop-shadow(0 0 5px var(--yellow)); margin-bottom: 10px; }
+        .account-bar { background: var(--card); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px; display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; width: 100%; max-width: 1200px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .acc-item { text-align: center; border-right: 1px solid #444; padding-right: 20px; }
+        .acc-item:last-child { border-right: none; }
         .acc-label { font-size: 0.7em; color: #888; text-transform: uppercase; display: block; }
-        .acc-val { font-size: 1.2em; font-weight: bold; }
-
+        
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 20px; }
 
-        /* Boleta e Caixa Dourada */
-        .boleta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; background: #0b0e11; padding: 15px; border-radius: 10px; }
-        .sugestao-ia { background: rgba(240, 185, 11, 0.15); border: 2px solid var(--yellow); border-radius: 10px; padding: 15px; margin-top: 15px; text-align: center; display: none; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0px var(--yellow); } 50% { box-shadow: 0 0 15px var(--yellow); } }
-        .nota-badge { background: var(--yellow); color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        /* Card de Alvos Especial */
+        .alvos-container { grid-column: span 2; border: 1px solid var(--yellow); }
+        .alvos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; }
+        .target-box { text-align: center; background: #0b0e11; padding: 10px; border-radius: 8px; }
+        .target-val { display: block; font-size: 1.3em; font-weight: bold; color: var(--green); margin: 5px 0; }
 
+        /* Boleta e Sugestão Dourada */
+        .boleta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; background: #0b0e11; padding: 12px; border-radius: 10px; }
+        .sugestao-ia { background: rgba(240, 185, 11, 0.15); border: 2px solid var(--yellow); border-radius: 10px; padding: 12px; margin-top: 10px; text-align: center; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0px var(--yellow); } 50% { box-shadow: 0 0 15px var(--yellow); } }
+        
         input { background: #1e2329; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; text-align: center; width: 100%; box-sizing: border-box; }
-        button { border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        button { border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .btn-buy { background: var(--green); color: black; }
+        .btn-sell { background: var(--red); color: white; }
         .btn-panic { background: var(--red); color: white; border: 1px solid white; animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
@@ -35,132 +41,135 @@
     <img src="/static/logo_jurity.png" class="logo">
     
     <div class="account-bar">
-        <div class="acc-item"><span class="acc-label">Conta</span><span class="acc-val" id="conta-id">---</span></div>
-        <div class="acc-item"><span class="acc-label">Patrimônio</span><span class="acc-val" id="saldo-atual" style="color:var(--green)">R$ 0,00</span></div>
-        <div class="acc-item"><span class="acc-label">Lucro Hoje (Fechado)</span><span class="acc-val" id="res-dia">R$ 0,00</span></div>
-        <div class="acc-item"><span class="acc-label">Ordens em Aberto</span><span class="acc-val" id="aberto-total">R$ 0,00</span></div>
+        <div class="acc-item"><span class="acc-label">Conta</span><b id="conta-id">---</b></div>
+        <div class="acc-item"><span class="acc-label">Patrimônio</span><b id="saldo-atual" style="color:var(--green)">R$ 0,00</b></div>
+        <div class="acc-item"><span class="acc-label">Lucro Hoje</span><b id="res-dia">R$ 0,00</b></div>
+        <div class="acc-item"><span class="acc-label">Em Aberto</span><b id="aberto-total">R$ 0,00</b></div>
     </div>
 
     <div class="grid">
-        <div class="card">
-            <h3 style="color:var(--yellow)">ÍNDICE (WIN) - <span id="preco-WIN">---</span></h3>
-            <div class="boleta">
-                <div style="grid-column: span 3;"><small>Lotes</small><input type="number" id="lotes-WIN" value="1"></div>
-                <div><small>SL</small><input type="number" id="sl-WIN"></div>
-                <div><small>TP</small><input type="number" id="tp-WIN"></div>
-                <button onclick="ordem('WIN','BUY')" style="background:var(--green)">Compra</button>
-                <button onclick="ordem('WIN','SELL')" style="background:var(--red); color:white; grid-column: span 2;">Venda</button>
-            </div>
-            <div id="sug-WIN" class="sugestao-ia">
-                <div style="font-size:0.7em; color:var(--yellow)">RECOMENDAÇÃO JURITY IA</div>
-                <div style="font-weight:bold; margin:5px 0;"><span id="txt-sug-WIN">---</span> | <span class="nota-badge" id="nota-WIN">0.0</span></div>
-                <button style="background:white; color:black; width:100%" id="btn-exec-WIN">EXECUTAR AGORA</button>
+        <div class="card alvos-container">
+            <h3 style="color:var(--yellow); margin:0;"><i class="fas fa-crosshairs"></i> ALVOS ESTRATÉGICOS v2.5</h3>
+            <div class="alvos-grid">
+                <div class="target-box">
+                    <small style="color:var(--yellow)">ÍNDICE (WIN)</small>
+                    <div id="trend-WIN" style="font-weight:bold; font-size:0.8em;">ANALISANDO...</div>
+                    <small>T1:</small> <span id="win-t1" class="target-val">---</span>
+                    <small>T2:</small> <span id="win-t2" class="target-val">---</span>
+                    <small>T3:</small> <span id="win-t3" class="target-val" style="color:var(--red)">---</span>
+                </div>
+                <div class="target-box">
+                    <small style="color:var(--yellow)">DÓLAR (WDO)</small>
+                    <div id="trend-WDO" style="font-weight:bold; font-size:0.8em;">ANALISANDO...</div>
+                    <small>T1:</small> <span id="wdo-t1" class="target-val">---</span>
+                    <small>T2:</small> <span id="wdo-t2" class="target-val">---</span>
+                    <small>T3:</small> <span id="wdo-t3" class="target-val" style="color:var(--red)">---</span>
+                </div>
             </div>
         </div>
 
         <div class="card">
-            <h3 style="color:var(--yellow)">DÓLAR (WDO) - <span id="preco-WDO">---</span></h3>
+            <h3>WIN: <span id="preco-WIN">---</span></h3>
             <div class="boleta">
-                <div style="grid-column: span 3;"><small>Lotes</small><input type="number" id="lotes-WDO" value="1"></div>
-                <div><small>SL</small><input type="number" id="sl-WDO"></div>
-                <div><small>TP</small><input type="number" id="tp-WDO"></div>
-                <button onclick="ordem('WDO','BUY')" style="background:var(--green)">Compra</button>
-                <button onclick="ordem('WDO','SELL')" style="background:var(--red); color:white; grid-column: span 2;">Venda</button>
+                <input type="number" id="lotes-WIN" value="1" style="grid-column: span 3;">
+                <input type="number" id="sl-WIN" placeholder="SL pts">
+                <input type="number" id="tp-WIN" placeholder="TP pts">
+                <button class="btn-buy" onclick="enviarOrdem('WIN', 'BUY')">Compra</button>
+                <button class="btn-sell" onclick="enviarOrdem('WIN', 'SELL')" style="grid-column: span 2;">Venda</button>
             </div>
-            <div id="sug-WDO" class="sugestao-ia">
-                <div style="font-size:0.7em; color:var(--yellow)">RECOMENDAÇÃO JURITY IA</div>
-                <div style="font-weight:bold; margin:5px 0;"><span id="txt-sug-WDO">---</span> | <span class="nota-badge" id="nota-WDO">0.0</span></div>
-                <button style="background:white; color:black; width:100%" id="btn-exec-WDO">EXECUTAR AGORA</button>
+            <div id="sug-WIN" class="sugestao-ia" style="display:none;">
+                <div style="font-size:0.7em;">SUGESTÃO JURITY IA | NOTA: <span id="nota-WIN">0</span></div>
+                <b id="txt-sug-WIN">---</b>
+                <button onclick="executarSugestao('WIN')" style="width:100%; background:white; margin-top:5px;">Executar</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>WDO: <span id="preco-WDO">---</span></h3>
+            <div class="boleta">
+                <input type="number" id="lotes-WDO" value="1" style="grid-column: span 3;">
+                <input type="number" id="sl-WDO" placeholder="SL pts">
+                <input type="number" id="tp-WDO" placeholder="TP pts">
+                <button class="btn-buy" onclick="enviarOrdem('WDO', 'BUY')">Compra</button>
+                <button class="btn-sell" onclick="enviarOrdem('WDO', 'SELL')" style="grid-column: span 2;">Venda</button>
+            </div>
+            <div id="sug-WDO" class="sugestao-ia" style="display:none;">
+                <div style="font-size:0.7em;">SUGESTÃO JURITY IA | NOTA: <span id="nota-WDO">0</span></div>
+                <b id="txt-sug-WDO">---</b>
+                <button onclick="executarSugestao('WDO')" style="width:100%; background:white; margin-top:5px;">Executar</button>
             </div>
         </div>
 
         <div class="card" style="grid-column: span 2; height: 250px;"><canvas id="perfChart"></canvas></div>
+    </div>
 
-        <div class="card" style="grid-column: span 2;">
-            <h3>JURITY ANALISTA (GEMINI 2.5 FLASH)</h3>
-            <div id="chat-win" style="height:150px; overflow-y:auto; background:#0b0e11; padding:15px; border-radius:10px; border:1px solid #333; margin-bottom:10px;"></div>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="user-input" placeholder="Digite e aperte Enter...">
-                <button onclick="enviarChat()" style="background:var(--yellow); color:black;">ENVIAR</button>
-            </div>
+    <div class="card" style="margin-top:20px; width:100%; max-width:1200px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>ORDENS EM ABERTO</h3>
+            <button class="btn-panic" onclick="zerarTudo()">PÂNICO: ZERAR TUDO</button>
         </div>
-
-        <div class="card" style="grid-column: span 2;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h4>ORDENS EM ABERTO</h4>
-                <button class="btn-panic" onclick="panic()">PÂNICO: ZERAR TUDO</button>
-            </div>
-            <table>
-                <thead><tr><th>Ativo</th><th>Lado</th><th>Lote</th><th>Lucro</th><th>Ação</th></tr></thead>
-                <tbody id="tabela-ordens"></tbody>
-            </table>
-        </div>
+        <table>
+            <thead><tr><th>Ativo</th><th>Lado</th><th>Lote</th><th>Lucro</th><th>Ação</th></tr></thead>
+            <tbody id="tabela-ordens"></tbody>
+        </table>
     </div>
 
     <script>
         const ctx = document.getElementById('perfChart').getContext('2d');
-        const chart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Saldo R$', data: [], borderColor: '#f0b90b', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false } });
-
-        document.getElementById('user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarChat(); });
+        const chart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Equity R$', data: [], borderColor: '#f0b90b', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false } });
 
         async function atualizar() {
             ['WIN', 'WDO'].forEach(async (at) => {
                 const r = await fetch('/get_signal?ativo=' + at);
                 const d = await r.json();
-                document.getElementById('preco-' + at).innerText = d.preco;
                 
-                const box = document.getElementById('sug-' + at);
-                if(d.alvos && d.alvos.sinal !== "NEUTRO") {
-                    box.style.display = 'block';
-                    document.getElementById('txt-sug-' + at).innerText = d.alvos.sinal;
-                    document.getElementById('nota-' + at).innerText = d.alvos.score;
-                    document.getElementById('btn-exec-' + at).onclick = () => ordem(at, d.alvos.sinal === "COMPRA" ? "BUY" : "SELL");
-                } else { box.style.display = 'none'; }
+                document.getElementById('preco-' + at).innerText = d.preco || '---';
+
+                if(d.alvos) {
+                    const pfx = at.toLowerCase();
+                    document.getElementById(pfx + '-t1').innerText = d.alvos.t1;
+                    document.getElementById(pfx + '-t2').innerText = d.alvos.t2;
+                    document.getElementById(pfx + '-t3').innerText = d.alvos.t3;
+                    
+                    const trendEl = document.getElementById('trend-' + at);
+                    trendEl.innerText = d.alvos.trend;
+                    trendEl.style.color = d.alvos.trend === "ALTA" ? "var(--green)" : "var(--red)";
+
+                    // Caixa Dourada
+                    const sugBox = document.getElementById('sug-' + at);
+                    if(d.alvos.sinal !== "NEUTRO" && d.alvos.score > 4) {
+                        sugBox.style.display = 'block';
+                        document.getElementById('txt-sug-' + at).innerText = d.alvos.sinal;
+                        document.getElementById('nota-' + at).innerText = d.alvos.score;
+                    } else { sugBox.style.display = 'none'; }
+                }
             });
 
             const rFin = await fetch('/get_financeiro');
             const fin = await rFin.json();
             document.getElementById('conta-id').innerText = fin.conta;
             document.getElementById('saldo-atual').innerText = "R$ " + fin.saldo_atual.toLocaleString('pt-BR');
+            document.getElementById('res-dia').innerText = "R$ " + fin.resultado_dia.toLocaleString('pt-BR');
             
-            // CORREÇÃO VISUAL: Lucro Hoje Corrigido
-            const resDia = document.getElementById('res-dia');
-            resDia.innerText = "R$ " + fin.resultado_dia.toLocaleString('pt-BR');
-            resDia.style.color = fin.resultado_dia >= 0 ? 'var(--green)' : 'var(--red)';
-
-            let somaAberto = fin.posicoes.reduce((acc, p) => acc + (p.profit || p.lucro), 0);
-            const elAberto = document.getElementById('aberto-total');
-            elAberto.innerText = "R$ " + somaAberto.toLocaleString('pt-BR');
-            elAberto.style.color = somaAberto >= 0 ? 'var(--green)' : 'var(--red)';
+            let abertoTotal = fin.posicoes.reduce((acc, p) => acc + (p.profit || p.lucro || 0), 0);
+            document.getElementById('aberto-total').innerText = "R$ " + abertoTotal.toLocaleString('pt-BR');
 
             let html = '';
             fin.posicoes.forEach(p => {
-                html += `<tr><td>${p.symbol || p.ativo}</td><td style="color:${p.type==0?'#0f8':'#f44'}">${p.type==0?'BUY':'SELL'}</td><td>${p.volume || p.lotes}</td><td>R$ ${(p.profit || p.lucro).toFixed(2)}</td><td><button onclick="fechar(${p.ticket})">Fechar</button></td></tr>`;
+                html += `<tr><td>${p.symbol || p.ativo}</td><td>${p.type==0?'BUY':'SELL'}</td><td>${p.volume}</td><td>R$ ${(p.profit || p.lucro).toFixed(2)}</td><td><button onclick="fechar(${p.ticket})">X</button></td></tr>`;
             });
             document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="5" style="text-align:center">Nenhuma ordem ativa.</td></tr>';
         }
 
-        async function ordem(ativo, tipo) {
+        async function enviarOrdem(ativo, tipo) {
             const lotes = document.getElementById('lotes-' + ativo).value;
             const sl = document.getElementById('sl-' + ativo).value;
             const tp = document.getElementById('tp-' + ativo).value;
-            await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ativo, tipo, lotes, sl, tp }) });
+            await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ativo, tipo, lotes, sl_pontos: sl, tp_pontos: tp }) });
             alert("Ordem enviada!");
         }
 
-        async function panic() { if(confirm("ZERAR TUDO?")) await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: 'PANIC' }) }); }
-
-        async function enviarChat() {
-            const inp = document.getElementById('user-input');
-            const win = document.getElementById('chat-win');
-            if(!inp.value) return;
-            const msg = inp.value; inp.value = '';
-            win.innerHTML += `<p style="color:var(--yellow)"><b>Você:</b> ${msg}</p>`;
-            const r = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ mensagem: msg }) });
-            const d = await r.json();
-            win.innerHTML += `<p style="color:var(--green)"><b>Jurity:</b> ${d.resposta}</p>`;
-            win.scrollTop = win.scrollHeight;
-        }
+        async function zerarTudo() { if(confirm("ZERAR TUDO?")) await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: 'PANIC' }) }); }
 
         setInterval(atualizar, 2000);
         setInterval(() => {
