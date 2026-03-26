@@ -3,6 +3,8 @@ import random
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request
 import google.generativeai as genai
+import pandas as pd
+import numpy as np
 
 app = Flask(__name__)
 
@@ -68,8 +70,10 @@ def atualizar_dados():
     data = request.json
     ativo = data.get('ativo')
     if ativo in dados_mercado:
-        dados_mercado[ativo]['preco'] = data.get('preco')
-        dados_mercado[ativo]['status'] = "Conectado"
+        preco = data.get('preco')
+        dados_mercado[ativo]['preco'] = preco
+        # Novo: Calcula alvos em tempo real
+        dados_mercado[ativo]['alvos'] = calcular_alvos_estrategicos(ativo, preco)
     return jsonify({"status": "ok"})
 
 @app.route('/atualizar_financeiro', methods=['POST'])
@@ -86,6 +90,47 @@ def atualizar_financeiro():
     if len(historico_equity) > 30: 
         historico_equity.pop(0)
     return jsonify({"status": "ok"})
+# Armazenamento para histórico de cálculos (últimos 100 ticks)
+historico_ticks = {"WIN": [], "WDO": []}
+
+# Calcula alvos
+def calcular_alvos_estrategicos(ativo, preco_atual):
+    # Mantém um pequeno histórico para as EMAs e ATR
+    historico_ticks[ativo].append(preco_atual)
+    if len(historico_ticks[ativo]) > 50: historico_ticks[ativo].pop(0)
+    
+    if len(historico_ticks[ativo]) < 21: # Aguarda ter dados suficientes
+        return {"t1": "Calculando...", "t2": "Calculando...", "t3": "Calculando...", "sentido": "Neutro"}
+
+    df = pd.DataFrame(historico_ticks[ativo], columns=['Close'])
+    # Simulando High/Low/Volume para o cálculo funcionar com tick único
+    df['High'] = df['Close'] * 1.0002 
+    df['Low'] = df['Close'] * 0.9998
+    df['Volume'] = 100 
+
+    # Lógica enviada por você
+    df['EMA9'] = df['Close'].ewm(span=9).mean()
+    df['EMA21'] = df['Close'].ewm(span=21).mean()
+    df['VWAP'] = (df['Close'] * df['Volume']).cumsum() / df['Volume'].cumsum()
+    df['TR'] = df['High'] - df['Low']
+    df['ATR'] = df['TR'].rolling(14).mean().fillna(df['TR'].mean())
+
+    last_close = df['Close'].iloc[-1]
+    last_atr = df['ATR'].iloc[-1]
+    trend = 1 if last_close > df['EMA9'].iloc[-1] else -1
+
+    # Definição de Alvos
+    t1 = last_close + (trend * last_atr)
+    t2 = last_close + (trend * last_atr * 2)
+    vwap_dev = abs(last_close - df['VWAP'].iloc[-1])
+    t3 = last_close + (trend * (last_atr * 3 + vwap_dev))
+
+    return {
+        "t1": round(t1, 2 if ativo == "WDO" else 0),
+        "t2": round(t2, 2 if ativo == "WDO" else 0),
+        "t3": round(t3, 2 if ativo == "WDO" else 0),
+        "sentido": "ALTA" if trend == 1 else "BAIXA"
+    }
 
 # --- GESTÃO DE ORDENS (DASHBOARD -> MT5) ---
 @app.route('/order', methods=['POST'])
