@@ -2,187 +2,213 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA - Trading Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jurity IA - Master Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
-        .main-container { max-width: 1200px; margin: 0 auto; text-align: center; }
+        :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; --text: #eaeaea; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        .logo { width: 100px; margin-bottom: 10px; }
-        
-        /* Novo Card de Conta Expandido */
-        .account-card { background: var(--card); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px; display: inline-flex; gap: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 0.9em; }
-        .acc-item { border-right: 1px solid #444; padding-right: 20px; text-align: left; }
-        .acc-item:last-child { border-right: none; }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; text-align: left; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 20px; position: relative; }
+        /* Cabeçalho e Logo */
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo { width: 120px; filter: drop-shadow(0 0 10px var(--yellow)); margin-bottom: 10px; }
+        .header h1 { margin: 0; color: var(--yellow); letter-spacing: 2px; text-transform: uppercase; }
 
-        /* Boleta e Sugestão */
-        .boleta { margin-top: 15px; display: flex; gap: 8px; align-items: center; background: #0b0e11; padding: 10px; border-radius: 10px; }
-        .input-lotes { width: 60px; background: #1e2329; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; text-align: center; }
-        .btn-trade { border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; }
+        /* Card de Conta e Saldo (Novo) */
+        .account-bar { background: var(--card); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px 25px; display: flex; flex-wrap: wrap; gap: 30px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); justify-content: center; }
+        .acc-item { text-align: center; border-right: 1px solid #444; padding-right: 25px; }
+        .acc-item:last-child { border-right: none; padding-right: 0; }
+        .acc-label { font-size: 0.75em; color: #888; display: block; text-transform: uppercase; }
+        .acc-value { font-size: 1.1em; font-weight: bold; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 20px; }
+
+        /* Boleta Completa */
+        .boleta { margin-top: 15px; background: #0b0e11; padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .boleta-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .boleta-inputs input { background: #1e2329; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; text-align: center; width: 100%; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn-trade { flex: 1; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-buy { background: var(--green); color: black; }
         .btn-sell { background: var(--red); color: white; }
-        
-        .sugestao-box { background: rgba(240, 185, 11, 0.15); border: 2px solid var(--yellow); border-radius: 12px; padding: 12px; margin-top: 15px; display: none; text-align: center; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0px var(--yellow); } 50% { box-shadow: 0 0 15px var(--yellow); } }
+
+        /* Sugestão Dourada */
+        .sugestao-box { background: rgba(240, 185, 11, 0.15); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px; margin-top: 15px; display: none; text-align: center; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0px var(--yellow); } 50% { box-shadow: 0 0 15px var(--yellow); } 100% { box-shadow: 0 0 0px var(--yellow); } }
 
         /* Gráfico e Chat */
-        .chart-wrap { height: 250px; width: 100%; position: relative; }
-        .chat-win { height: 180px; overflow-y: auto; background: #0b0e11; padding: 15px; border-radius: 10px; border: 1px solid #333; margin: 10px 0; font-size: 0.9em; }
+        .chart-container { height: 250px; width: 100%; position: relative; }
+        .chat-window { height: 200px; overflow-y: auto; background: #0b0e11; padding: 15px; border-radius: 10px; border: 1px solid #333; margin: 10px 0; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        /* Tabela e Pânico */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { text-align: left; color: #888; border-bottom: 1px solid #333; padding: 10px; }
         td { padding: 10px; border-bottom: 1px solid #222; }
+        .btn-panic { background: var(--red); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="main-container">
-    <img src="/static/logo_jurity.png" class="logo">
-    
-    <div class="account-card">
-        <div class="acc-item"><i class="fas fa-id-card"></i> CONTA:<br><b id="conta-id">---</b></div>
-        <div class="acc-item"><i class="fas fa-wallet"></i> SALDO:<br><b id="saldo-atual" style="color:var(--green)">R$ 0,00</b></div>
-        <div class="acc-item"><i class="fas fa-calendar-day"></i> HOJE:<br><b id="resultado-dia">R$ 0,00</b></div>
-        <div class="acc-item"><i class="fas fa-hand-holding-usd"></i> EM ABERTO:<br><b id="aberto-total">R$ 0,00</b></div>
+    <div class="header">
+        <img src="/static/logo_jurity.png" class="logo" alt="Jurity IA Logo">
+        <h1>Jurity IA</h1>
+    </div>
+
+    <div class="account-bar">
+        <div class="acc-item"><span class="acc-label">Conta</span><span class="acc-value" id="conta-id">---</span></div>
+        <div class="acc-item"><span class="acc-label">Patrimônio</span><span class="acc-value" id="saldo-atual" style="color:var(--green)">R$ 0,00</span></div>
+        <div class="acc-item"><span class="acc-label">Lucro Hoje</span><span class="acc-value" id="res-dia">R$ 0,00</span></div>
+        <div class="acc-item"><span class="acc-label">Em Aberto</span><span class="acc-value" id="aberto-total">R$ 0,00</span></div>
     </div>
 
     <div class="grid">
         <div class="card">
-            <h3>MINI ÍNDICE (WIN)</h3>
-            <h1 id="preco-WIN" style="font-size: 2.5em; margin: 10px 0;">---</h1>
+            <h3 style="color:var(--yellow)">MINI ÍNDICE (WIN)</h3>
+            <h1 id="preco-WIN">---</h1>
             <div class="boleta">
-                <input type="number" id="lotes-WIN" class="input-lotes" value="1">
-                <button class="btn-trade btn-buy" onclick="enviarOrdem('WIN', 'BUY')">COMPRAR</button>
-                <button class="btn-trade btn-sell" onclick="enviarOrdem('WIN', 'SELL')">VENDER</button>
+                <div class="boleta-inputs">
+                    <div><small>Lotes</small><input type="number" id="lotes-WIN" value="1"></div>
+                    <div><small>S. Loss</small><input type="number" id="sl-WIN" placeholder="pts"></div>
+                    <div><small>S. Gain</small><input type="number" id="tp-WIN" placeholder="pts"></div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-trade btn-buy" onclick="enviarOrdem('WIN', 'BUY')">Comprar</button>
+                    <button class="btn-trade btn-sell" onclick="enviarOrdem('WIN', 'SELL')">Vender</button>
+                </div>
             </div>
             <div id="sugestao-WIN" class="sugestao-box">
-                <div id="txt-sugestao-WIN" style="font-weight:bold;">---</div>
-                <button id="btn-sug-WIN" class="btn-trade" style="width:100%; margin-top:5px; background:white;">EXECUTAR AGORA</button>
+                <b id="txt-sugestao-WIN">---</b><br>
+                <button class="btn-trade" style="width:100%; margin-top:10px; background:white;" id="btn-sug-WIN">Executar Sugestão</button>
             </div>
         </div>
 
         <div class="card">
-            <h3>MINI DÓLAR (WDO)</h3>
-            <h1 id="preco-WDO" style="font-size: 2.5em; margin: 10px 0;">---</h1>
+            <h3 style="color:var(--yellow)">MINI DÓLAR (WDO)</h3>
+            <h1 id="preco-WDO">---</h1>
             <div class="boleta">
-                <input type="number" id="lotes-WDO" class="input-lotes" value="1">
-                <button class="btn-trade btn-buy" onclick="enviarOrdem('WDO', 'BUY')">COMPRAR</button>
-                <button class="btn-trade btn-sell" onclick="enviarOrdem('WDO', 'SELL')">VENDER</button>
+                <div class="boleta-inputs">
+                    <div><small>Lotes</small><input type="number" id="lotes-WDO" value="1"></div>
+                    <div><small>S. Loss</small><input type="number" id="sl-WDO" placeholder="pts"></div>
+                    <div><small>S. Gain</small><input type="number" id="tp-WDO" placeholder="pts"></div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-trade btn-buy" onclick="enviarOrdem('WDO', 'BUY')">Comprar</button>
+                    <button class="btn-trade btn-sell" onclick="enviarOrdem('WDO', 'SELL')">Vender</button>
+                </div>
             </div>
             <div id="sugestao-WDO" class="sugestao-box">
-                <div id="txt-sugestao-WDO" style="font-weight:bold;">---</div>
-                <button id="btn-sug-WDO" class="btn-trade" style="width:100%; margin-top:5px; background:white;">EXECUTAR AGORA</button>
+                <b id="txt-sugestao-WDO">---</b><br>
+                <button class="btn-trade" style="width:100%; margin-top:10px; background:white;" id="btn-sug-WDO">Executar Sugestão</button>
             </div>
         </div>
 
         <div class="card" style="grid-column: span 2;">
-            <h3>CURVA DE PATRIMÔNIO</h3>
-            <div class="chart-wrap"><canvas id="perfChart"></canvas></div>
+            <h3>Performance da Conta</h3>
+            <div class="chart-container"><canvas id="perfChart"></canvas></div>
         </div>
 
         <div class="card" style="grid-column: span 2;">
-            <h3>JURITY ANALISTA (GEMINI IA)</h3>
-            <div id="chat-window" class="chat-win"></div>
+            <h3>Jurity IA Analista (Gemini)</h3>
+            <div id="chat-window" class="chat-window"></div>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="user-input" style="flex-grow:1; background:#0b0e11; border:1px solid #444; color:white; padding:12px; border-radius:8px;" placeholder="Digite e aperte Enter para falar com a IA...">
-                <button onclick="enviarPergunta()" style="background:var(--yellow); border:none; padding:10px 25px; border-radius:8px; font-weight:bold; cursor:pointer;">ENVIAR</button>
+                <input type="text" id="user-input" style="flex-grow:1; background:#0b0e11; border:1px solid #444; color:white; padding:12px; border-radius:8px;" placeholder="Pergunte algo à IA (Enter para enviar)...">
+                <button onclick="enviarPergunta()" style="background:var(--yellow); border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer;">Enviar</button>
             </div>
         </div>
     </div>
 
-    <div class="card" style="margin-top:20px; width:100%; box-sizing:border-box;">
-        <h3>ORDENS EM ABERTO</h3>
+    <div class="card" style="margin-top:20px; width:100%; max-width:1200px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3>Ordens em Aberto</h3>
+            <button class="btn-panic" onclick="zerarTudo()">PÂNICO: ZERAR TUDO</button>
+        </div>
         <table>
-            <thead><tr><th>ATIVO</th><th>LADO</th><th>SL</th><th>TP</th><th>LUCRO</th><th>AÇÃO</th></tr></thead>
+            <thead><tr><th>Ativo</th><th>Lado</th><th>SL</th><th>TP</th><th>Lucro</th><th>Ação</th></tr></thead>
             <tbody id="tabela-ordens"></tbody>
         </table>
     </div>
-</div>
 
-<script>
-    const ctx = document.getElementById('perfChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: { labels: [], datasets: [{ label: 'Saldo R$', data: [], borderColor: '#f0b90b', tension: 0.3, fill: false }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { grid: { color: '#222' } } } }
-    });
+    <script>
+        const ctx = document.getElementById('perfChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Saldo R$', data: [], borderColor: '#f0b90b', tension: 0.3, fill: false }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { grid: { color: '#222' } } } }
+        });
 
-    const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+        // Evento Enter no Chat
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') enviarPergunta();
+        });
 
-    // Função Enter no Chat
-    document.getElementById('user-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') enviarPergunta();
-    });
+        async function atualizar() {
+            // Preços e Sugestões
+            ['WIN', 'WDO'].forEach(async (at) => {
+                const res = await fetch('/get_signal?ativo=' + at);
+                const data = await res.json();
+                document.getElementById('preco-' + at).innerText = data.preco;
+                
+                const box = document.getElementById('sugestao-' + at);
+                if(data.sugestao !== "NEUTRO") {
+                    box.style.display = 'block';
+                    document.getElementById('txt-sugestao-' + at).innerText = "OPORTUNIDADE: " + data.sugestao;
+                    document.getElementById('btn-sug-' + at).onclick = () => enviarOrdem(at, data.sugestao === "COMPRA" ? "BUY" : "SELL");
+                } else { box.style.display = 'none'; }
+            });
 
-    async function atualizar() {
-        ['WIN', 'WDO'].forEach(async (at) => {
-            const r = await fetch('/get_signal?ativo=' + at);
+            // Financeiro
+            const rFin = await fetch('/get_financeiro');
+            const fin = await rFin.json();
+            document.getElementById('conta-id').innerText = fin.conta;
+            document.getElementById('saldo-atual').innerText = "R$ " + fin.saldo_atual.toLocaleString('pt-BR');
+            
+            const resDia = document.getElementById('res-dia');
+            resDia.innerText = "R$ " + fin.resultado_dia.toLocaleString('pt-BR');
+            resDia.style.color = fin.resultado_dia >= 0 ? 'var(--green)' : 'var(--red)';
+
+            const abertoTotal = fin.posicoes.reduce((acc, p) => acc + p.lucro, 0);
+            const elAberto = document.getElementById('aberto-total');
+            elAberto.innerText = "R$ " + abertoTotal.toLocaleString('pt-BR');
+            elAberto.style.color = abertoTotal >= 0 ? 'var(--green)' : 'var(--red)';
+
+            // Tabela
+            let html = '';
+            fin.posicoes.forEach(p => {
+                html += `<tr><td>${p.ativo}</td><td style="color:${p.tipo=='COMPRA'?'#0f8':'#f44'}">${p.tipo}</td><td>${p.sl}</td><td>${p.tp}</td><td>R$ ${p.lucro}</td><td><button onclick="fechar(${p.ticket})">Fechar</button></td></tr>`;
+            });
+            document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="6" style="text-align:center">Nenhuma ordem ativa.</td></tr>';
+        }
+
+        async function enviarPergunta() {
+            const input = document.getElementById('user-input');
+            const win = document.getElementById('chat-window');
+            if(!input.value) return;
+            const msg = input.value; input.value = '';
+            win.innerHTML += `<p style="color:var(--yellow)"><b>Você:</b> ${msg}</p>`;
+            const r = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ mensagem: msg }) });
             const d = await r.json();
-            document.getElementById('preco-' + at).innerText = d.preco;
-            const box = document.getElementById('sugestao-' + at);
-            if(d.sugestao !== "NEUTRO") {
-                if(box.style.display !== 'block') beep.play();
-                box.style.display = 'block';
-                document.getElementById('txt-sugestao-' + at).innerText = "OPORTUNIDADE: " + d.sugestao;
-                document.getElementById('btn-sug-' + at).onclick = () => enviarOrdem(at, d.sugestao === "COMPRA" ? "BUY" : "SELL");
-            } else { box.style.display = 'none'; }
-        });
+            win.innerHTML += `<p style="color:var(--green)"><b>Jurity:</b> ${d.resposta}</p>`;
+            win.scrollTop = win.scrollHeight;
+        }
 
-        const rFin = await fetch('/get_financeiro');
-        const fin = await rFin.json();
-        
-        document.getElementById('conta-id').innerText = fin.conta;
-        document.getElementById('saldo-atual').innerText = "R$ " + fin.saldo_atual.toLocaleString('pt-BR');
-        
-        const resDiaEl = document.getElementById('resultado-dia');
-        resDiaEl.innerText = "R$ " + fin.resultado_dia.toLocaleString('pt-BR');
-        resDiaEl.style.color = fin.resultado_dia >= 0 ? 'var(--green)' : 'var(--red)';
+        async function enviarOrdem(ativo, tipo) {
+            const lotes = document.getElementById('lotes-' + ativo).value;
+            const sl = document.getElementById('sl-' + ativo).value;
+            const tp = document.getElementById('tp-' + ativo).value;
+            await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ativo, tipo, lotes, sl_pontos: sl, tp_pontos: tp }) });
+            alert("Ordem de " + tipo + " enviada!");
+        }
 
-        let somaAberto = fin.posicoes.reduce((acc, p) => acc + p.lucro, 0);
-        const abertoEl = document.getElementById('aberto-total');
-        abertoEl.innerText = "R$ " + somaAberto.toLocaleString('pt-BR');
-        abertoEl.style.color = somaAberto >= 0 ? 'var(--green)' : 'var(--red)';
-
-        let html = '';
-        fin.posicoes.forEach(p => {
-            html += `<tr><td>${p.ativo}</td><td style="color:${p.tipo=='COMPRA'?'#0f8':'#f44'}">${p.tipo}</td><td>${p.sl}</td><td>${p.tp}</td><td>R$ ${p.lucro}</td><td><button onclick="fechar(${p.ticket})">X</button></td></tr>`;
-        });
-        document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="6" style="text-align:center">Nenhuma ordem ativa</td></tr>';
-    }
-
-    async function enviarPergunta() {
-        const input = document.getElementById('user-input');
-        const chatWin = document.getElementById('chat-window');
-        if(!input.value) return;
-        chatWin.innerHTML += `<p style="color:var(--yellow)"><b>Você:</b> ${input.value}</p>`;
-        const r = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ mensagem: input.value }) });
-        const d = await r.json();
-        chatWin.innerHTML += `<p style="color:var(--green); background:#161a1e; padding:10px; border-radius:8px;"><b>Jurity:</b> ${d.resposta}</p>`;
-        win.scrollTop = win.scrollHeight;
-        input.value = '';
-    }
-
-    async function updateChart() {
-        const res = await fetch('/get_historico');
-        const hist = await res.json();
-        chart.data.labels = hist.map(h => h.x);
-        chart.data.datasets[0].data = hist.map(h => h.y);
-        chart.update();
-    }
-
-    async function enviarOrdem(ativo, tipo) {
-        const lotes = document.getElementById('lotes-' + ativo).value;
-        await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ativo, tipo, lotes }) });
-        alert("Comando de " + tipo + " enviado!");
-    }
-
-    setInterval(atualizar, 2000);
-    setInterval(updateChart, 5000);
-</script>
+        setInterval(atualizar, 2000);
+        setInterval(() => {
+            fetch('/get_historico').then(r => r.json()).then(hist => {
+                chart.data.labels = hist.map(h => h.x);
+                chart.data.datasets[0].data = hist.map(h => h.y);
+                chart.update();
+            });
+        }, 5000);
+    </script>
 </body>
 </html>
