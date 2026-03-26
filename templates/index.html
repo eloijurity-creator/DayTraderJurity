@@ -2,17 +2,17 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA v2.6 - Master</title>
+    <title>Jurity IA v2.6</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
         .main-content { flex: 1; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .side-chat { width: 350px; background: var(--card); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
         
-        .account-bar { background: var(--card); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px; display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .account-bar { background: var(--card); border: 2px solid var(--yellow); border-radius: 10px; padding: 15px; display: flex; justify-content: space-around; margin-bottom: 20px; }
         .grid-boletas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
@@ -21,7 +21,7 @@
         .sugestao-ia { background: rgba(240, 185, 11, 0.2); border: 2px solid var(--yellow); padding: 15px; border-radius: 10px; text-align: center; margin-top: 15px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0px var(--yellow); } 50% { box-shadow: 0 0 15px var(--yellow); } 100% { box-shadow: 0 0 0px var(--yellow); } }
         
-        .chat-win { flex: 1; overflow-y: auto; background: #0b0e11; border-radius: 10px; padding: 15px; margin-bottom: 15px; font-size: 0.9em; line-height: 1.4; border: 1px solid #333; }
+        .chat-win { flex: 1; overflow-y: auto; background: #0b0e11; border-radius: 10px; padding: 15px; margin-bottom: 15px; font-size: 0.9em; border: 1px solid #333; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { border-bottom: 1px solid #444; padding: 10px; text-align: left; color: #888; font-size: 0.8em; }
         td { padding: 10px; border-bottom: 1px solid #222; font-size: 0.9em; }
@@ -40,7 +40,7 @@
         </div>
 
         <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>Estratégia:</span>
+            <span>ESTRATÉGIA:</span>
             <select id="sel-est" style="width:250px" onchange="mudarEstrategia()">
                 <option value="vortex">Vortex Trend Rider</option>
                 <option value="ml">Random Forest Momentum</option>
@@ -62,7 +62,7 @@
 
         <div class="grid-boletas">
             <div class="card">
-                <h3 style="color:var(--yellow); margin:0">ÍNDICE (WIN): <span id="preco-WIN">---</span></h3>
+                <h3 style="color:var(--yellow); margin:0">WIN: <span id="preco-WIN">---</span></h3>
                 <div class="boleta">
                     <div style="grid-column: span 2;"><small>Contratos</small><input type="number" id="lotes-WIN" value="1"></div>
                     <button onclick="ordem('WIN','BUY')" style="background:var(--green); font-weight:bold; border:none; border-radius:5px; padding:12px;">BUY</button>
@@ -70,13 +70,13 @@
                 </div>
                 <div id="sug-WIN" class="sugestao-ia" style="display:none;">
                     <div style="font-size:0.7em">NOTA IA: <b id="nota-WIN">0</b></div>
-                    <b id="txt-sug-WIN" style="font-size:1.2em">---</b><br>
-                    <button onclick="executarSugestao('WIN')" style="width:100%; margin-top:10px; background:white; color:black; font-weight:bold; padding:8px; border:none; border-radius:5px; cursor:pointer;">EXECUTAR AGORA</button>
+                    <b id="txt-sug-WIN">---</b><br>
+                    <button onclick="executarSugestao('WIN')" style="width:100%; margin-top:10px; background:white; color:black; font-weight:bold; padding:8px; border:none; border-radius:5px; cursor:pointer;">EXECUTAR WIN</button>
                 </div>
             </div>
 
             <div class="card">
-                <h3 style="color:var(--yellow); margin:0">DÓLAR (WDO): <span id="preco-WDO">---</span></h3>
+                <h3 style="color:var(--yellow); margin:0">WDO: <span id="preco-WDO">---</span></h3>
                 <div class="boleta">
                     <div style="grid-column: span 2;"><small>Contratos</small><input type="number" id="lotes-WDO" value="1"></div>
                     <button onclick="ordem('WDO','BUY')" style="background:var(--green); font-weight:bold; border:none; border-radius:5px; padding:12px;">BUY</button>
@@ -84,8 +84,8 @@
                 </div>
                 <div id="sug-WDO" class="sugestao-ia" style="display:none;">
                     <div style="font-size:0.7em">NOTA IA: <b id="nota-WDO">0</b></div>
-                    <b id="txt-sug-WDO" style="font-size:1.2em">---</b><br>
-                    <button onclick="executarSugestao('WDO')" style="width:100%; margin-top:10px; background:white; color:black; font-weight:bold; padding:8px; border:none; border-radius:5px; cursor:pointer;">EXECUTAR AGORA</button>
+                    <b id="txt-sug-WDO">---</b><br>
+                    <button onclick="executarSugestao('WDO')" style="width:100%; margin-top:10px; background:white; color:black; font-weight:bold; padding:8px; border:none; border-radius:5px; cursor:pointer;">EXECUTAR WDO</button>
                 </div>
             </div>
         </div>
@@ -94,11 +94,11 @@
 
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h4>ORDENS ABERTAS</h4>
+                <h4>ORDENS EM ABERTO</h4>
                 <button class="btn-panic" onclick="panic()">PÂNICO: ZERAR TUDO</button>
             </div>
             <table>
-                <thead><tr><th>Ativo</th><th>Lado</th><th>Contratos</th><th>Lucro</th><th>Ação</th></tr></thead>
+                <thead><tr><th>Ativo</th><th>Lado</th><th>Lote</th><th>Lucro</th><th>Ação</th></tr></thead>
                 <tbody id="tabela-ordens"></tbody>
             </table>
         </div>
@@ -108,7 +108,7 @@
         <h4 style="color:var(--yellow); margin:0 0 15px 0"><i class="fas fa-robot"></i> Jurity IA Analista</h4>
         <div id="chat-win" class="chat-win"></div>
         <input type="text" id="user-input" placeholder="Pergunte (Enter)...">
-        <button onclick="enviarChat()" style="background:var(--yellow); color:black; margin-top:10px; font-weight:bold; padding:12px; border:none; border-radius:5px; cursor:pointer;">ENVIAR PERGUNTA</button>
+        <button onclick="enviarChat()" style="background:var(--yellow); color:black; margin-top:10px; font-weight:bold; padding:12px; border:none; border-radius:5px; cursor:pointer;">ENVIAR</button>
     </div>
 
     <script>
@@ -147,7 +147,7 @@
             fin.posicoes.forEach(p => {
                 html += `<tr><td>${p.symbol}</td><td style="color:${p.type==0?'#0f8':'#f44'}">${p.type==0?'BUY':'SELL'}</td><td>${p.volume}</td><td>R$ ${p.profit.toFixed(2)}</td><td><button onclick="fechar(${p.ticket})">X</button></td></tr>`;
             });
-            document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="5" style="text-align:center">Sem ordens</td></tr>';
+            document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="5" style="text-align:center">Nenhuma ordem ativa.</td></tr>';
         }
 
         function mudarEstrategia() {
