@@ -6,8 +6,8 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO DA JURITY IA (GEMINI) ---
-# Lembre-se de configurar a variável GEMINI_KEY no painel do Render (Environment)
+# --- CONFIGURAÇÃO DA JURITY IA (GEMINI 2.5 FLASH) ---
+# Certifique-se de adicionar GEMINI_KEY nas "Environment Variables" do Render
 GEMINI_KEY = os.environ.get("GEMINI_KEY")
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY, transport='rest')
@@ -30,7 +30,39 @@ fila_comandos = []
 def index():
     return render_template('index.html')
 
-# --- RECEBE PREÇOS DO MT5 (PC) ---
+# --- CHAT INTELIGENTE COM LOOP DE MODELOS (ORDEM DE PREFERÊNCIA) ---
+@app.route('/chat', methods=['POST'])
+def chat():
+    pergunta = request.json.get('mensagem', '')
+    if not GEMINI_KEY:
+        return jsonify({"resposta": "Chave Gemini não configurada no Render."})
+
+    prompt = f"""
+    Você é a Jurity IA Analista.
+    DADOS ATUAIS DA CONTA:
+    - WIN: {dados_mercado['WIN']['preco']} | WDO: {dados_mercado['WDO']['preco']}
+    - Saldo Equity: R$ {financeiro['saldo_atual']}
+    - Lucro Hoje: R$ {financeiro['resultado_dia']}
+    - Ordens Ativas: {len(financeiro['posicoes'])}
+    
+    Instrução: Responda em Português-BR de forma técnica, curta e direta.
+    Pergunta do usuário: {pergunta}
+    """
+
+    # Modelos para tentativa (priorizando a sua API 2.5 Flash)
+    modelos_para_tentar = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-pro']
+    
+    for nome_modelo in modelos_para_tentar:
+        try:
+            model = genai.GenerativeModel(nome_modelo)
+            response = model.generate_content(prompt)
+            return jsonify({"resposta": response.text})
+        except Exception:
+            continue
+            
+    return jsonify({"resposta": "Jurity está a processar os alvos. Tente novamente em instantes."})
+
+# --- GESTÃO DE DADOS (RECEBIDOS DA PONTE_MT5 NO PC) ---
 @app.route('/atualizar_dados', methods=['POST'])
 def atualizar_dados():
     data = request.json
@@ -38,58 +70,29 @@ def atualizar_dados():
     if ativo in dados_mercado:
         dados_mercado[ativo]['preco'] = data.get('preco')
         dados_mercado[ativo]['status'] = "Conectado"
-        
-        # Inteligência Estratégica Simbolizada (Sugestão Dourada)
-        sorteio = random.random()
-        if sorteio > 0.99: dados_mercado[ativo]['sugestao'] = "COMPRA"
-        elif sorteio < 0.01: dados_mercado[ativo]['sugestao'] = "VENDA"
-        else: dados_mercado[ativo]['sugestao'] = "NEUTRO"
     return jsonify({"status": "ok"})
 
-# --- RECEBE FINANCEIRO DO MT5 (PC) ---
 @app.route('/atualizar_financeiro', methods=['POST'])
 def atualizar_financeiro():
     global financeiro, historico_equity
     data = request.json
     financeiro.update(data)
     
-    # Gestão do Gráfico (Máximo 30 pontos para não estourar)
+    # Atualização do Gráfico (Máximo 30 pontos para evitar "estouro")
     agora = datetime.now().strftime('%H:%M:%S')
     saldo = data.get('saldo_atual', 0)
     if not historico_equity or (historico_equity[-1]['y'] != saldo):
         historico_equity.append({'x': agora, 'y': saldo})
-    if len(historico_equity) > 30:
+    if len(historico_equity) > 30: 
         historico_equity.pop(0)
     return jsonify({"status": "ok"})
-
-# --- CHAT INTELIGENTE (GEMINI) ---
-@app.route('/chat', methods=['POST'])
-def chat():
-    pergunta = request.json.get('mensagem', '')
-    if not GEMINI_KEY:
-        return jsonify({"resposta": "Chave Gemini não configurada. Verifique as variáveis de ambiente."})
-
-    contexto = f"""
-    Você é a Jurity IA. Assistente de Day Trade.
-    Dados: WIN: {dados_mercado['WIN']['preco']} | WDO: {dados_mercado['WDO']['preco']}
-    Conta: {financeiro['conta']} | Saldo: R$ {financeiro['saldo_atual']}
-    Resultado Hoje: R$ {financeiro['resultado_dia']} | Ordens: {len(financeiro['posicoes'])}
-    Instrução: Responda em Português-BR, seja técnica e curta.
-    Pergunta: {pergunta}
-    """
-    try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content(contexto)
-        return jsonify({"resposta": response.text})
-    except:
-        return jsonify({"resposta": "Estou processando os dados, tente novamente em breve."})
 
 # --- GESTÃO DE ORDENS (DASHBOARD -> MT5) ---
 @app.route('/order', methods=['POST'])
 def order():
-    # Agora recebe lotes, sl_pontos e tp_pontos da boleta
+    # Recebe: tipo (BUY/SELL/PANIC), lotes, sl_pontos, tp_pontos
     fila_comandos.append(request.json)
-    return jsonify({"status": "enviado"})
+    return jsonify({"status": "comando_recebido"})
 
 @app.route('/get_orders')
 def get_orders():
