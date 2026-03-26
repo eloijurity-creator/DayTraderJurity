@@ -2,87 +2,97 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Jurity IA - Painel Estratégico</title>
+    <title>Jurity IA - Trading Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg: #0b0e11; --card: #1e2329; --border: #333; --green: #00ff88; --red: #ff4d4d; --yellow: #f0b90b; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
-        
         .main-container { max-width: 1200px; margin: 0 auto; text-align: center; }
         
-        /* Cabeçalho e Card de Conta */
-        .logo { width: 100px; margin-bottom: 10px; }
-        .account-card { background: var(--card); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px 30px; display: inline-flex; gap: 30px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .logo { width: 90px; margin-bottom: 10px; }
+        .account-card { background: var(--card); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px; display: inline-flex; gap: 30px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 20px; text-align: left; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; text-align: left; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 20px; }
 
-        /* Boleta de Operação */
-        .boleta { margin-top: 20px; display: flex; gap: 10px; align-items: center; background: #0b0e11; padding: 10px; border-radius: 10px; }
-        .input-lotes { width: 70px; background: #1e2329; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; text-align: center; font-size: 1.1em; }
-        .btn-trade { border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; transition: 0.2s; }
+        /* Boleta */
+        .boleta { margin-top: 15px; display: flex; gap: 8px; align-items: center; background: #0b0e11; padding: 10px; border-radius: 10px; }
+        .input-lotes { width: 60px; background: #1e2329; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; text-align: center; }
+        .btn-trade { border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; }
         .btn-buy { background: var(--green); color: black; }
         .btn-sell { background: var(--red); color: white; }
-        .btn-trade:hover { opacity: 0.8; transform: scale(1.02); }
 
-        /* Alerta Estratégico Dourado */
-        .sugestao-box { background: rgba(240, 185, 11, 0.15); border: 2px solid var(--yellow); border-radius: 12px; padding: 15px; margin-top: 20px; display: none; text-align: center; animation: pulse-gold 1.5s infinite; }
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0px var(--yellow); } 50% { box-shadow: 0 0 20px var(--yellow); } 100% { box-shadow: 0 0 0px var(--yellow); } }
+        /* Alerta Dourado */
+        .sugestao-box { background: rgba(240, 185, 11, 0.1); border: 2px solid var(--yellow); border-radius: 12px; padding: 12px; margin-top: 15px; display: none; text-align: center; animation: pulse-gold 1.5s infinite; }
+        @keyframes pulse-gold { 0%, 100% { box-shadow: 0 0 0px var(--yellow); } 50% { box-shadow: 0 0 15px var(--yellow); } }
 
-        /* Gráfico Controlado */
-        .chart-panel { grid-column: span 2; min-height: 350px; display: flex; flex-direction: column; }
-        .chart-container { flex-grow: 1; position: relative; width: 100%; height: 300px; }
+        /* Gráfico e Chat */
+        .chart-container { height: 250px; width: 100%; position: relative; }
+        .chat-window { height: 150px; overflow-y: auto; background: #0b0e11; padding: 15px; border-radius: 10px; border: 1px solid #333; margin: 10px 0; font-size: 0.9em; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; color: #888; border-bottom: 1px solid #333; padding: 12px; }
-        td { padding: 12px; border-bottom: 1px solid #222; }
+        th { text-align: left; color: #888; border-bottom: 1px solid #333; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #222; }
     </style>
 </head>
 <body>
 
 <div class="main-container">
-    <div class="header">
-        <img src="/static/logo_jurity.png" class="logo" alt="Jurity IA">
-        <br>
-        <div class="account-card">
-            <span><i class="fas fa-id-card"></i> CONTA: <b id="conta-id">---</b></span>
-            <span><i class="fas fa-chart-line"></i> SALDO EQUITY: <b id="saldo-atual" style="color:var(--green)">R$ 0,00</b></span>
-        </div>
+    <img src="/static/logo_jurity.png" class="logo" alt="Jurity IA">
+    <div class="account-card">
+        <span>CONTA: <b id="conta-id">---</b></span>
+        <span>PATRIMÓNIO: <b id="saldo-atual" style="color:var(--green)">R$ 0,00</b></span>
     </div>
 
     <div class="grid">
         <div class="card">
             <h3 style="color:var(--yellow)">MINI ÍNDICE (WIN)</h3>
-            <h1 id="preco-WIN" style="font-size: 3em; margin: 10px 0;">---</h1>
-            
+            <h1 id="preco-WIN">---</h1>
             <div class="boleta">
-                <input type="number" id="lotes-WIN" class="input-lotes" value="1" min="1">
+                <input type="number" id="lotes-WIN" class="input-lotes" value="1">
                 <button class="btn-trade btn-buy" onclick="enviarOrdem('WIN', 'BUY')">COMPRAR</button>
                 <button class="btn-trade btn-sell" onclick="enviarOrdem('WIN', 'SELL')">VENDER</button>
             </div>
-
             <div id="sugestao-WIN" class="sugestao-box">
-                <div style="color:var(--yellow); font-size: 0.8em; margin-bottom: 5px;">ESTRATÉGIA JURITY IA</div>
-                <div id="txt-sugestao-WIN" style="font-weight:bold; font-size: 1.2em; margin-bottom: 10px;">---</div>
-                <button id="btn-sugestao-WIN" class="btn-trade" style="width:100%; background:white; color:black;">EXECUTAR SUGESTÃO</button>
+                <div id="txt-sugestao-WIN" style="font-weight:bold;">---</div>
+                <button id="btn-sug-WIN" class="btn-trade" style="width:100%; margin-top:5px; background:white;">EXECUTAR</button>
             </div>
         </div>
 
-        <div class="card chart-panel">
-            <h3>DESEMPENHO DA CONTA (PATRIMÔNIO)</h3>
-            <div class="chart-container">
-                <canvas id="perfChart"></canvas>
+        <div class="card">
+            <h3 style="color:var(--yellow)">MINI DÓLAR (WDO)</h3>
+            <h1 id="preco-WDO">---</h1>
+            <div class="boleta">
+                <input type="number" id="lotes-WDO" class="input-lotes" value="1">
+                <button class="btn-trade btn-buy" onclick="enviarOrdem('WDO', 'BUY')">COMPRAR</button>
+                <button class="btn-trade btn-sell" onclick="enviarOrdem('WDO', 'SELL')">VENDER</button>
+            </div>
+            <div id="sugestao-WDO" class="sugestao-box">
+                <div id="txt-sugestao-WDO" style="font-weight:bold;">---</div>
+                <button id="btn-sug-WDO" class="btn-trade" style="width:100%; margin-top:5px; background:white;">EXECUTAR</button>
+            </div>
+        </div>
+
+        <div class="card" style="grid-column: span 2;">
+            <h3>CURVA DE EQUITY</h3>
+            <div class="chart-container"><canvas id="perfChart"></canvas></div>
+        </div>
+
+        <div class="card" style="grid-column: span 2;">
+            <h3>JURITY ANALISTA (IA)</h3>
+            <div id="chat-window" class="chat-window"></div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="chat-input" style="flex-grow:1; background:#0b0e11; border:1px solid #444; color:white; padding:10px; border-radius:8px;" placeholder="Pergunte algo...">
+                <button onclick="enviarChat()" style="background:var(--yellow); border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer;">ENVIAR</button>
             </div>
         </div>
     </div>
 
-    <div class="card" style="margin-top:20px; width: 100%; box-sizing: border-box;">
-        <h3>ORDENS EM ABERTO & GERENCIAMENTO DE RISCO</h3>
+    <div class="card" style="margin-top:20px; width:100%; box-sizing:border-box;">
+        <h3>ORDENS EM ABERTO</h3>
         <table>
-            <thead>
-                <tr><th>ATIVO</th><th>LADO</th><th>STOP LOSS</th><th>TAKE PROFIT</th><th>DIST. SL</th><th>LUCRO</th><th>AÇÃO</th></tr>
-            </thead>
+            <thead><tr><th>ATIVO</th><th>LADO</th><th>SL</th><th>TP</th><th>LUCRO</th><th>AÇÃO</th></tr></thead>
             <tbody id="tabela-ordens"></tbody>
         </table>
     </div>
@@ -92,45 +102,36 @@
     const ctx = document.getElementById('perfChart').getContext('2d');
     const chart = new Chart(ctx, {
         type: 'line',
-        data: { labels: [], datasets: [{ label: 'Saldo R$', data: [], borderColor: '#f0b90b', backgroundColor: 'rgba(240,185,11,0.1)', fill: true, tension: 0.3 }] },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false,
-            scales: { x: { display: false }, y: { grid: { color: '#222' }, ticks: { color: '#888' } } },
-            plugins: { legend: { display: false } }
-        }
+        data: { labels: [], datasets: [{ label: 'Saldo R$', data: [], borderColor: '#f0b90b', tension: 0.3, fill: false }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { grid: { color: '#222' } } } }
     });
 
+    const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+
     async function atualizar() {
-        const rWin = await fetch('/get_signal?ativo=WIN');
-        const dWin = await rWin.json();
-        document.getElementById('preco-WIN').innerText = dWin.preco;
-        
-        // Interface Estratégica
-        const box = document.getElementById('sugestao-WIN');
-        if(dWin.sugestao !== "NEUTRO") {
-            box.style.display = 'block';
-            document.getElementById('txt-sugestao-WIN').innerText = "OPORTUNIDADE: " + dWin.sugestao;
-            document.getElementById('btn-sugestao-WIN').onclick = () => enviarOrdem('WIN', dWin.sugestao === "COMPRA" ? "BUY" : "SELL");
-        } else { box.style.display = 'none'; }
+        ['WIN', 'WDO'].forEach(async (at) => {
+            const r = await fetch('/get_signal?ativo=' + at);
+            const d = await r.json();
+            document.getElementById('preco-' + at).innerText = d.preco;
+            const box = document.getElementById('sugestao-' + at);
+            if(d.sugestao !== "NEUTRO") {
+                if(box.style.display !== 'block') beep.play();
+                box.style.display = 'block';
+                document.getElementById('txt-sugestao-' + at).innerText = "SUGESTÃO: " + d.sugestao;
+                document.getElementById('btn-sug-' + at).onclick = () => enviarOrdem(at, d.sugestao === "COMPRA" ? "BUY" : "SELL");
+            } else { box.style.display = 'none'; }
+        });
 
         const rFin = await fetch('/get_financeiro');
         const fin = await rFin.json();
         document.getElementById('conta-id').innerText = fin.conta;
-        document.getElementById('saldo-atual').innerText = "R$ " + fin.saldo_atual.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('saldo-atual').innerText = "R$ " + fin.saldo_atual.toLocaleString('pt-BR');
 
         let html = '';
         fin.posicoes.forEach(p => {
-            html += `<tr>
-                <td><b>${p.ativo}</b></td>
-                <td style="color:${p.tipo=='COMPRA'?'#0f8':'#f44'}">${p.tipo}</td>
-                <td>${p.sl}</td><td>${p.tp}</td>
-                <td style="${p.dist_sl_pontos < 30 ? 'color:red;font-weight:bold' : ''}">${p.dist_sl_pontos} pts</td>
-                <td style="font-weight:bold">R$ ${p.lucro}</td>
-                <td><button onclick="fecharIndividual(${p.ticket})" style="background:none; border:1px solid #555; color:white; cursor:pointer; border-radius:4px;">FECHAR</button></td>
-            </tr>`;
+            html += `<tr><td>${p.ativo}</td><td>${p.tipo}</td><td>${p.sl}</td><td>${p.tp}</td><td>R$ ${p.lucro}</td><td><button onclick="fechar(${p.ticket})">X</button></td></tr>`;
         });
-        document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="7" style="text-align:center; padding:20px; color:#444;">Nenhuma operação ativa</td></tr>';
+        document.getElementById('tabela-ordens').innerHTML = html || '<tr><td colspan="6" style="text-align:center">Sem ordens</td></tr>';
     }
 
     async function updateChart() {
@@ -143,20 +144,20 @@
 
     async function enviarOrdem(ativo, tipo) {
         const lotes = document.getElementById('lotes-' + ativo).value;
-        await fetch('/order', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ ativo, tipo, lotes })
-        });
-        alert("Comando de " + (tipo === 'BUY' ? 'COMPRA' : 'VENDA') + " enviado para o MetaTrader.");
+        await fetch('/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ativo, tipo, lotes }) });
+        alert("Comando enviado!");
     }
 
-    async function fecharIndividual(ticket) {
-        await fetch('/order', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ tipo: 'FECHAR_TICKET', ticket })
-        });
+    async function enviarChat() {
+        const inp = document.getElementById('chat-input');
+        const win = document.getElementById('chat-window');
+        if(!inp.value) return;
+        win.innerHTML += `<p style="color:var(--yellow)"><b>Você:</b> ${inp.value}</p>`;
+        const r = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ mensagem: inp.value }) });
+        const d = await r.json();
+        win.innerHTML += `<p style="color:var(--green)"><b>IA:</b> ${d.resposta}</p>`;
+        win.scrollTop = win.scrollHeight;
+        inp.value = '';
     }
 
     setInterval(atualizar, 2000);
