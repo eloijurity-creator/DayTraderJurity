@@ -145,7 +145,7 @@ def chat():
             response = model.generate_content(prompt)
             return jsonify({"resposta": response.text})
         except: continue
-    return jsonify({"resposta": "Jurity está analisando o fluxo de ordens. Tente novamente."})
+    return jsonify({"resposta": "Jurity está analisando o fluxo de ordens. Tente novamente!"})
 
 @app.route('/order', methods=['POST'])
 def order(): 
